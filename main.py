@@ -1,12 +1,77 @@
 import pandas as pd
 import numpy as np
+from openpyxl import load_workbook
+from openpyxl.styles import Side, Border, NamedStyle,Alignment,Font,PatternFill
+import random
+import psutil
+import tkinter as tk
+from tkinter import messagebox
+from openpyxl.utils.cell import range_boundaries
 
+# global values
 FLAG_M = '#'
 FLAG_BAL = '>'
 NOT_REAL_ACTION = ['virement moi','test']
+COL_TO_RESET = [6,7,8,9,10]
+S = None
 
+# some functions
 def verif_nan(val):
     return ~(isinstance(val, (int,float)) and np.isnan(val))
+def round_p(val,n=2):
+    return round(val,n)
+def round_e(val,n=1):
+    return round(val,n)
+
+# Style
+class StyleCell():
+    def __init__(self,wb):
+        self.wb = wb
+        self.thin_border = Border(top=Side(style='thin'), bottom=Side(style='thin'), left=Side(style='thin'), right=Side(style='thin'))
+        self.style_cat1_list = []
+        colors_cat1 = ["FFC3C0", "FFD1B8", "FFE6B8", "E6FFB8", "C0FFC3", "B8FFD1", "B8E6FF", "B8C3FF", "D1B8FF", "FFB8E6"]
+        
+        
+        style_title_name = "style_title"
+        self.style_title = NamedStyle(name=style_title_name,
+                        font=Font(color="FF000000"),
+                        fill=PatternFill(start_color="FF99CCFF", end_color="FF99CCFF", fill_type="solid"),
+                        border=self.thin_border,
+                        alignment=Alignment(horizontal='center', vertical='center')
+                        ) if style_title_name not in wb.named_styles else style_title_name
+        
+        style_title_val = "style_title_val"
+        self.style_title_val = NamedStyle(name=style_title_val,
+                        font=Font(color="FF000000"),
+                        fill=PatternFill(start_color="FFB3E5FC", end_color="FFB3E5FC", fill_type="solid"),
+                        border=self.thin_border,
+                        alignment=Alignment(horizontal='center', vertical='center'),
+                        number_format='0 €'
+                        ) if style_title_val not in wb.named_styles else style_title_val
+        
+        style_cat1 = "style_cat1"
+        self.style_cat1 = NamedStyle(name=style_cat1,
+                        font=Font(color="FF000000"),
+                        fill=PatternFill(start_color=colors_cat1[0], end_color=colors_cat1[0], fill_type="solid"),
+                        border=self.thin_border,
+                        alignment=Alignment(horizontal='center', vertical='center'),
+                        ) if style_cat1 not in wb.named_styles else style_cat1
+        
+        for i,c in enumerate(colors_cat1):
+            self.gen_style_cat1(f'style_cat{i+1}',c)
+        
+    def gen_style_cat1(self,name,color):
+        if name not in self.wb.named_styles:
+            self.style_cat1_list.append(
+                                    NamedStyle(name=name,
+                                            font=Font(color="FF000000"),
+                                            fill=PatternFill(start_color=color, end_color=color, fill_type="solid"),
+                                            border=self.thin_border,
+                                            alignment=Alignment(horizontal='center', vertical='center'),
+                                            )
+                                    )
+        else : 
+            self.style_cat1_list.append(name)
 
 class Sheet():
     def __init__(self,path,sheet = None):
@@ -19,7 +84,7 @@ class Sheet():
         self.col_cat2 = self.col_cat1+1
         self.c_note = self.col_cat2+1
         self.c_val = self.c_note+1
-        self.c_w1 = self.c_val+1
+        self.c_w1 = self.c_val+3
         self.c_w2 = self.c_w1+1
         self.c_w3 = self.c_w2+1
         self.c_w4 = self.c_w3+1
@@ -29,8 +94,17 @@ class Sheet():
         
         self.read_excel()
         self.verif_bal_init()
-        self.create_months()
-        self.write_in_sheet()
+        
+    def is_file_open(self,file_path):
+        for proc in psutil.process_iter():
+            try:
+                files = proc.open_files()
+                for item in files:
+                    if file_path == item.path:
+                        return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+        return False
 
     def read_excel(self):
         try:
@@ -38,9 +112,14 @@ class Sheet():
                 self.data = pd.read_excel(self.file_path, sheet_name=self.sheet_name, header=None)
             else:
                 self.data = pd.read_excel(self.file_path, header=None)
+        except PermissionError as e :
+            print("Error: The Excel file is already open by another application.")
+            self.popup_alrdy_open()
+            raise e
         except Exception as e:
             print("Error reading Excel file:", e)
-
+            raise e
+            
     def get_all_months(self):
         self.dic_m = {}
         for row, val in self.data.iterrows():
@@ -61,7 +140,7 @@ class Sheet():
             return self.data.iloc[self.cell_sold_init[0],self.cell_sold_init[1]]
         return self.months_obj[-1].bal_usr
         
-    def create_months(self):
+    def gen_data(self):
         self.get_all_months()         
         def get_row_end_month(c_name,dic):
             dic= list(dic.items())
@@ -78,33 +157,91 @@ class Sheet():
             
             self.months_obj.append(Month(m_data,self.get_bal_prev()))
 
-    def write_in_sheet(self):
+    def clear_zone(self):        
+        
+        mcr_coord_list = [mcr.coord for mcr in self.sh.merged_cells.ranges]
+    
+        for mcr in mcr_coord_list:
+            min_col, min_row, max_col, max_row = range_boundaries(mcr)
+            if min_col in COL_TO_RESET:
+                self.sh.unmerge_cells(mcr)
+                
+        
+        for idx, col in enumerate(self.sh.iter_cols(), start=1):
+            if idx in COL_TO_RESET:
+                for cell in col:
+                    cell.value = None
+                    cell.style = 'Normal'
+        
+    def write(self):
+        global S
+        self.wb = load_workbook(self.file_path)
+        self.sh = self.wb[self.sheet_name]
+        self.clear_zone()
+        
+        S = StyleCell(self.wb)
         
         for month in self.months_obj:
-            row = month.data.index.to_list()[0]
-            self.data.at[row,self.c_w1] = month.txt_m_tot
-            self.data.at[row,self.c_w2] = month.txt_m_exp_tot
-            self.data.at[row,self.c_w3] = month.txt_m_inc_tot
-            self.data.at[row,self.c_w4] = month.txt_m_exp_real
-            self.data.at[row,self.c_w5] = month.txt_m_inc_real
+            row = month.data.index.to_list()[0]+1
+            self.sh.cell(row,self.c_w1, month.txt_m_tot)
+            self.sh.cell(row,self.c_w1).style = S.style_title
+            self.sh.cell(row,self.c_w2, month.txt_m_exp_tot)
+            self.sh.cell(row,self.c_w2).style = S.style_title
+            self.sh.cell(row,self.c_w3, month.txt_m_inc_tot)
+            self.sh.cell(row,self.c_w3).style = S.style_title
+            
+            self.sh.cell(row,self.c_w4, month.txt_m_exp_real)
+            self.sh.cell(row,self.c_w4).style = S.style_title
+            self.sh.cell(row,self.c_w4).border = Border(left=Side(style='thick'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thin'))
+            self.sh.cell(row,self.c_w5, month.txt_m_inc_real)
+            self.sh.cell(row,self.c_w5).style = S.style_title
+            self.sh.cell(row,self.c_w5).border = Border(left=Side(style='thin'),right=Side(style='thick'),top=Side(style='thick'),bottom=Side(style='thin'))
             row +=1
-            self.data.at[row,self.c_w1] = month.tot
-            self.data.at[row,self.c_w2] = month.tot_exp
-            self.data.at[row,self.c_w3] = month.tot_inc
-            self.data.at[row,self.c_w4] = month.tot_exp_real
-            self.data.at[row,self.c_w5] = month.tot_inc_real
+            self.sh.cell(row,self.c_w1, round_e(month.tot))
+            self.sh.cell(row,self.c_w1).style = S.style_title_val
+            self.sh.cell(row,self.c_w2, round_e(month.tot_exp))
+            self.sh.cell(row,self.c_w2).style = S.style_title_val
+            self.sh.cell(row,self.c_w3, round_e(month.tot_inc))
+            self.sh.cell(row,self.c_w3).style = S.style_title_val
             
-            self.data.at[month.row_bal+1,self.col_cat1] = month.txt_m_bal_real
-            self.data.at[month.row_bal+1,self.col_cat2] = month.bal_pred
-            self.data.at[month.row_bal,self.c_note] = month.txt_m_verif
-            self.data.at[month.row_bal,self.c_val] = month.verif
+            self.sh.cell(row,self.c_w4, round_e(month.tot_exp_real))
+            self.sh.cell(row,self.c_w4).style = S.style_title_val
+            self.sh.cell(row,self.c_w4).border = Border(left=Side(style='thick'),right=Side(style='thin'),top=Side(style='thin'),bottom=Side(style='thick'))
+            self.sh.cell(row,self.c_w5, round_e(month.tot_inc_real))
+            self.sh.cell(row,self.c_w5).style = S.style_title_val
+            self.sh.cell(row,self.c_w5).border = Border(left=Side(style='thin'),right=Side(style='thick'),top=Side(style='thin'),bottom=Side(style='thick'))
             
-            month.write_cat1(self.data,month.data.index.to_list()[0]+3,self.c_w1)
+            self.sh.cell(month.row_bal+2,self.col_cat1+1, month.txt_m_bal_real)
+            self.sh.cell(month.row_bal+2,self.col_cat1+1).style = 'Output'
+            self.sh.cell(month.row_bal+2,self.col_cat2+1, month.bal_pred)
+            self.sh.cell(month.row_bal+2,self.col_cat2+1).style = 'Output'
             
-        self.data.to_excel(self.file_path, sheet_name=self.sheet_name,index=False, header=False)
-
-        
-
+            self.sh.cell(month.row_bal+1,self.c_note+1, month.txt_m_verif)
+            self.sh.cell(month.row_bal+1,self.c_val+1, month.verif)
+            
+            if month.verif:
+                self.sh.cell(month.row_bal+1,self.c_note+1).style = 'Good'
+                self.sh.cell(month.row_bal+1,self.c_val+1).style = 'Good'
+            else : 
+                self.sh.cell(month.row_bal+1,self.c_note+1).style = 'Bad'
+                self.sh.cell(month.row_bal+1,self.c_val+1).style = 'Bad'
+            
+            self.sh.merge_cells(start_row=month.row_bal+1, start_column=self.c_note+1, end_row=month.row_bal+2, end_column=self.c_note+1)
+            self.sh.merge_cells(start_row=month.row_bal+1, start_column=self.c_note+2, end_row=month.row_bal+2, end_column=self.c_note+2)
+            
+            self.sh.cell(month.row_bal+1,self.c_note+1).alignment=Alignment(horizontal='center', vertical='center')
+            self.sh.cell(month.row_bal+1,self.c_val+1).alignment=Alignment(horizontal='center', vertical='center')
+            
+            month.write_cat1(self.sh,month.data.index.to_list()[0]+4,self.c_w1)
+            
+        self.wb.save(self.file_path)
+    
+    def popup_alrdy_open(self):
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)  # Mettre la fenêtre au-dessus de toutes les autres
+        messagebox.showwarning("Fichier Excel ouvert", "Le fichier Excel est déjà ouvert par une autre application.", parent=root)
+        root.destroy()
 
 class Month():
     def __init__(self,data,bal_prev):
@@ -150,16 +287,18 @@ class Month():
     def update_tot(self):
         for _,val in self.data.iterrows():
             euro = val[3]
-            ok_real = True if val[0]not in NOT_REAL_ACTION else None
+            ok_real = True if val[0]not in NOT_REAL_ACTION else False
             if isinstance(euro,(int,float)) and verif_nan(euro):
                 self.tot+=euro
                 if euro > 0:
                     self.tot_inc+=euro
-                    self.tot_inc_real+=euro if ok_real else None
+                    if ok_real:
+                        self.tot_inc_real+=euro
                     
                 else:
                     self.tot_exp+=euro
-                    self.tot_exp_real+=euro if ok_real else None
+                    if ok_real:
+                        self.tot_exp_real+=euro 
     
     def update_bal(self):
         for row,val in self.data.iterrows():
@@ -183,6 +322,8 @@ class Month():
         dic_cat1 = {}
         for id,val in self.d_cat1.items():
             if verif_nan(val):
+                if FLAG_BAL in val:
+                    break
                 if val not in dic_cat1:
                     dic_cat1[val] = self.data.loc[id]
                 else:
@@ -191,16 +332,27 @@ class Month():
         # create categories 
         for _,df in dic_cat1.items():
             self.cat1.append(Cat(df.transpose(),self.tot_exp_real,self.tot_inc_real))
+    
+    def sort_cat1(self):
             
-    def write_cat1(self,data,row_s,col_s):
+        def custom_sort(cat):
+            if cat.tot_euro >= 0:
+                return (1, cat.tot_euro) # 1 pour dire de le mettre au dessus de la list, tot_euro pour que sorted fasse un rangement avec aussi
+            else:
+                return (0, cat.tot_euro)
+        self.cat1 = sorted(self.cat1, key=custom_sort)
+            
+    
+    def write_cat1(self,sh,row_s,col_s):
+        self.sort_cat1()
         for cat in self.cat1:
-            cat.write(data,row_s,col_s)
+            cat.write(sh,row_s,col_s)
             if len(cat.data.shape) == 1:
                 add_row = 2
             else:
                 add_row = len(cat.cat2)+2
             row_s+=add_row
-            
+
 
 class Cat():
     def __init__(self,data,exp_tot,inc_tot):
@@ -256,7 +408,8 @@ class Cat():
     def create_cat2(self):
         # check if multiple cat2
         if self.d_cat2.nunique(dropna=False) == 1:  # only 1 sub categorie
-            self.txt_total = self.d_cat2.iloc[0]
+            if verif_nan(self.d_cat2.iloc[0]):
+                self.txt_total = self.d_cat2.iloc[0]
         else:
             # get all categories with the dataframe corresponding to it
             dic_cat2 = {}
@@ -271,20 +424,34 @@ class Cat():
             for _,df in dic_cat2.items():
                 self.cat2.append(Cat2(df.transpose(),self.tot_euro,self.disp_p))
         
-    def write(self,data,row_s,col_s):
-        data.at[row_s,col_s] = self.name
+    def write(self,sh,row_s,col_s):
+        r_s = row_s
+        sh.cell(row_s,col_s,self.name)
+        sh.cell(row_s,col_s).font = Font(bold=True)
         col_s+=1
+        
         for cat2 in self.cat2:
-            cat2.write(data,row_s,col_s)
+            cat2.write(sh,row_s,col_s)
             row_s+=1
-        data.at[row_s,col_s] = self.txt_total
-        data.at[row_s,col_s+1] = self.tot_euro
-        data.at[row_s,col_s+2] = self.tot_p if self.disp_p else None
+        cat_st = random.choice(S.style_cat1_list)
+        sh.cell(r_s,col_s-1).style =cat_st
+        sh.merge_cells(start_row=r_s, start_column=col_s-1, end_row=row_s, end_column=col_s-1)
+        
+        sh.cell(row_s,col_s,self.txt_total)
+        sh.cell(row_s,col_s).style =cat_st
+        
+        sh.cell(row_s,col_s+1,round_e(self.tot_euro))
+        sh.cell(row_s,col_s+1).style =cat_st
+        sh.cell(row_s,col_s+1).number_format='0 €'
+        
+        if self.disp_p:
+            sh.cell(row_s,col_s+2,round_p(self.tot_p))
+            sh.cell(row_s,col_s+2).style =cat_st
+            sh.cell(row_s,col_s+2).number_format='0 \%'
         
         
 class Cat2():
     def __init__(self,data,tot_cat,disp_p):
-        print(data)
         self.data = data
         self.tot_cat = tot_cat
         self.tot_p = None
@@ -310,21 +477,37 @@ class Cat2():
             self.tot_euro+=val
         if self.disp_p:
             self.tot_p = self.tot_euro*100/self.tot_cat
-            
-            
-    def write(self,data,row_s,col_s):
-        data.at[row_s,col_s] = self.name
-        data.at[row_s,col_s+1] = self.tot_euro
-        data.at[row_s,col_s+2] = self.tot_p if self.disp_p else None
-
+    
+    
+    def write(self,sh,row_s,col_s):
+        sh.cell(row_s,col_s, self.name)
+        sh.cell(row_s,col_s).style = 'Calculation'
+        sh.cell(row_s,col_s+1, round_e(self.tot_euro))
+        sh.cell(row_s,col_s+1).style = 'Calculation'
+        sh.cell(row_s,col_s+1).number_format='0 €'
+        sh.cell(row_s,col_s+1).alignment=Alignment(horizontal='center', vertical='center')
+                
+        if self.disp_p:  
+            sh.cell(row_s,col_s+2, round_p(self.tot_p))
+            sh.cell(row_s,col_s+2).style = 'Calculation'
+            sh.cell(row_s,col_s+2).number_format='0 \%'
+            sh.cell(row_s,col_s+2).alignment=Alignment(horizontal='center', vertical='center')
+        
+        
+        
 if __name__=='__main__':
+    print('\n*** Start ***')
     excel_path = 'exemple.xlsx'
     sheet_name = 'Feuil2'
-    
-    sheet = Sheet(excel_path,sheet_name)
+    try: 
+        sheet = Sheet(excel_path,sheet_name)
+        print("Sheet opened")
+        sheet.gen_data()
+        print("Data generated")
+        sheet.write()
+        print("Success !")
+    except Exception as e:
+        print(e)
+    finally:
+        print('*** End ***\n')
 
-                
-    print('FINISH')
-
-    
-    
