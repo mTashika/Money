@@ -7,8 +7,6 @@ import psutil
 import tkinter as tk
 from tkinter import messagebox
 from openpyxl.utils.cell import range_boundaries
-import customtkinter as ctk
-from tkinter import filedialog
 
 import CONST as C
 

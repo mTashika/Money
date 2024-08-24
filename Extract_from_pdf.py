@@ -7,6 +7,7 @@ class PDFExtraction():
         self.text = ''
         
         self.financial_operations = None
+        self.month,self.year = None,None
         
         self.read_pdf()
         self.extract()
@@ -19,11 +20,13 @@ class PDFExtraction():
         # print(self.text)
                 
     def extract(self):
-        self.financial_operations = ExtractionLbp2024(self.text).FinOp
-        
+        self.financial_operations,self.month,self.year = ExtractionLbp2024(self.text).get_value()
+    
     def print(self):
+        print(f'Date: {self.month} {self.year}')
         for op in self.financial_operations:
             op.print()
+        
             
         
     def add_and_cut(self):

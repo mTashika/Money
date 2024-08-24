@@ -9,9 +9,13 @@ class ExtractionLbp2024:
         self.text = text
         self.FinOp = []
         self.init_balise()
+        
+    def get_value(self):
         self.get_matching_lines()
         self.extract_lpb_2024()
         self.set_sign()
+        self.get_date()
+        return self.FinOp,self.month,self.year
         
     def init_balise(self):
         # Balise for the Positive (+) transaction
@@ -20,6 +24,8 @@ class ExtractionLbp2024:
         # Balise for the negative (-) transaction
         self.B_BUY = ['ACHAT CB ','PRELEVEMENT DE ','COTISATION TRIMESTRIELLE DE ',
                     'VIREMENT INSTANTANE A ','VIREMENT POUR']
+        
+        self.B_DATE = 'Situation de vos comptes\nau '
         
     def get_balise(self,line):
         'Return the balise name of the line'
@@ -39,7 +45,7 @@ class ExtractionLbp2024:
         else:
             raise Exception('Invalide balise')
         
-    def get_pattern(self,line,balise_name,balise_type):
+    def get_pattern(self,balise_name):
         'return the pattern for the specifique balise to take the description and the amount'
         pattern_date = rf"\d{{2}}\.\d{{2}}\.\d{{2}}"
         pattern_special_chars = rf'[^\w\s.]'
@@ -69,7 +75,12 @@ class ExtractionLbp2024:
                 self.matching_lines.append(l)
         # for l in self.matching_lines:
         #     print(l)
-
+    
+    def get_date(self):
+        pattern_date = rf'{re.escape(self.B_DATE)}\s*\d{{2}}\s*([a-zA-Z]+)\s(\d{{4}})'
+        match = re.search(pattern_date,self.text)
+        self.month,self.year = match.group(1),match.group(2)
+    
     def extract_lpb_2024(self):
         '''
         Extract information from a pdf with "la banque postal" convention
@@ -77,7 +88,7 @@ class ExtractionLbp2024:
         for matching_line in self.matching_lines:
             balise_name = self.get_balise(matching_line)
             balise_type = self.get_balise_type(balise_name)
-            pattern_name,pattern_amount = self.get_pattern(matching_line,balise_name,balise_type)
+            pattern_name,pattern_amount = self.get_pattern(balise_name)
             match_name = re.search(pattern_name, matching_line)
             match_amout = re.search(pattern_amount, matching_line)
             
