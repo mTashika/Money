@@ -1,5 +1,6 @@
 import CONST as C
 from Extract_from_pdf import PDFExtraction
+from Tools import protect_ws,unprotect_range,unprotect_cell
 
 
 class WriteFo:
@@ -12,6 +13,8 @@ class WriteFo:
         self.styles = S
         self.init_excel_month()
         self.write_fo()
+        self.protect_sheet()
+        
         
 
     def init_excel_month(self):
@@ -44,10 +47,10 @@ class WriteFo:
         self.ws.merge_cells(start_row=self.month_end_row, start_column=C.START_MONTH[1]+3,
                             end_row=self.month_end_row+1, end_column=C.START_MONTH[1]+3)
     def init_color_month(self):
-        self.ws.cell(row=C.START_MONTH[0],column=C.START_MONTH[1]).style='Input'
+        self.ws.cell(row=C.START_MONTH[0],column=C.START_MONTH[1]).style='Accent1'
         
         self.ws.cell(row=self.month_end_row,column=C.START_MONTH[1]).style='Normal'
-        self.ws.cell(row=self.month_end_row,column=C.START_MONTH[1]+1).style='Note'
+        self.ws.cell(row=self.month_end_row,column=C.START_MONTH[1]+1).style='Input'
         self.ws.cell(row=self.month_end_row,column=C.START_MONTH[1]+2).style='Neutral'
         self.ws.cell(row=self.month_end_row,column=C.START_MONTH[1]+3).style='Neutral'
         
@@ -73,6 +76,12 @@ class WriteFo:
         for row,fo in enumerate(self.fo,start=self.month_start_row):
             self.ws.cell(row=row,column=C.START_MONTH[1]+2).value=fo.name
             self.ws.cell(row=row,column=C.START_MONTH[1]+3).value=fo.value
+            
+    def protect_sheet(self):
+        protect_ws(self.ws)
+        unprotect_range(self.ws,f'A{self.month_start_row}:D{self.month_end_row-1}')
+        unprotect_cell(self.ws,f'B{self.month_end_row}')
+        
 
 
         

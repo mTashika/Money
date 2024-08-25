@@ -7,6 +7,9 @@ import psutil
 import tkinter as tk
 from tkinter import messagebox
 from openpyxl.utils.cell import range_boundaries
+import openpyxl
+from Tools import is_smallest_month,get_previous_month,remove_accents,find_valid_row
+
 
 import CONST as C
 
@@ -75,9 +78,13 @@ class StyleCell():
 class Sheet():
     def __init__(self,path,sheet = None):
         self.file_path = path
-        self.sheet_name = sheet
+        try:
+            sheet = sheet.lower()
+            self.sheet_name = remove_accents(sheet)
+        except Exception:
+            self.sheet_name = None
+            
         self.data = None
-        self.cell_sold_init = [1,0]
         self.c_months = 0
         self.col_cat1 = self.c_months
         self.col_cat2 = self.col_cat1+1
@@ -92,6 +99,7 @@ class Sheet():
         self.months_obj = []
         
         self.read_excel()
+        self.find_pos_sold_init()
         self.verif_bal_init()
         
     def is_file_open(self,file_path):
@@ -116,10 +124,12 @@ class Sheet():
             self.popup_alrdy_open()
             raise e
         except Exception as e:
+            messagebox.showerror('Error',f'Error reading Excel file\n{e}')
             print("Error reading Excel file:", e)
             raise e
             
     def get_all_months(self):
+        'Get all the month name with the line of the month start'
         self.dic_m = {}
         for row, val in self.data.iterrows():
             v = val[self.c_months]
@@ -128,19 +138,43 @@ class Sheet():
                     m_txt = v.replace(C.BALISE_NEW_MONTH, '')
                     if m_txt not in self.dic_m:
                         self.dic_m[m_txt] = row
-            
+    
+    def find_pos_sold_init(self):
+        self.wb = openpyxl.load_workbook(self.file_path)
+        if is_smallest_month(self.wb.sheetnames,self.sheet_name):
+            prev_month = get_previous_month(self.sheet_name)
+            if self.wb[C.INIT_SHEET_NAME][C.INIT_SHEET_MONTH_CELL[1]].value == prev_month:
+                self.position_sold_init = [C.INIT_SHEET_NAME,C.INIT_SHEET_SOLD_CELL[1],prev_month]# sheet, position, mois
+        else:
+            prev_month = get_previous_month(self.sheet_name)
+            if prev_month in self.wb.sheetnames:
+                row = find_valid_row(self.wb[prev_month])
+                pos_sold = f'D{row}'
+                self.position_sold_init = [prev_month,pos_sold,prev_month]# sheet, position, mois
+            else:
+                self.position_sold_init = [None,None,None]
+
+
     def verif_bal_init(self):
-        v = pd.read_excel(self.file_path, sheet_name=C.INIT_SHEET_NAME, header=None)
-        val = v.iloc[self.cell_sold_init[0],self.cell_sold_init[1]]
-        if not isinstance(val,(int,float)) or not verif_nan(val):
-            raise Exception ('Balance value not at the expected spot')
-        
+        if not None in self.position_sold_init:
+            ws = self.wb[self.position_sold_init[0]]
+            val = ws[self.position_sold_init[1]].value
+            if isinstance(val,(int,float)) or verif_nan(val):
+                self.bal_init_ok = True
+                return True
+        messagebox.showinfo("Information", f"Make sure to enter the sold in the sheet : {self.position_sold_init[0]}")
+        self.bal_init_ok = False
+
     def get_bal_prev(self):
-        if self.months_obj == []:
-            v = pd.read_excel(self.file_path, sheet_name=C.INIT_SHEET_NAME, header=None)
-            val = v.iloc[self.cell_sold_init[0],self.cell_sold_init[1]]
-            return val
-        return self.months_obj[-1].bal_usr
+        if self.bal_init_ok:
+            if self.months_obj == []:
+                ws = self.wb[self.position_sold_init[0]]
+                val = ws[self.position_sold_init[1]].value
+                return val
+            return self.months_obj[-1].bal_usr
+        else:
+            return None
+        
         
     def gen_data(self):
         self.get_all_months()         
@@ -164,7 +198,7 @@ class Sheet():
         mcr_coord_list = [mcr.coord for mcr in self.sh.merged_cells.ranges]
     
         for mcr in mcr_coord_list:
-            min_col, min_row, max_col, max_row = range_boundaries(mcr)
+            min_col, _, _, _ = range_boundaries(mcr)
             if min_col in COL_TO_RESET:
                 self.sh.unmerge_cells(mcr)
                 
@@ -219,30 +253,37 @@ class Sheet():
             self.sh.cell(row,self.c_w5+1).style = S.style_title_val
             self.sh.cell(row,self.c_w5+1).border = Border(left=Side(style='thin'),right=Side(style='thick'),top=Side(style='thin'),bottom=Side(style='thick'))
             
-            self.sh.cell(month.row_bal+2,self.col_cat1+1, month.txt_m_bal_real)
-            self.sh.cell(month.row_bal+2,self.col_cat1+1).style = 'Output'
             self.sh.cell(month.row_bal+2,self.col_cat2+1, month.bal_pred)
-            self.sh.cell(month.row_bal+2,self.col_cat2+1).style = 'Output'
             
-            self.sh.cell(month.row_bal+1,self.c_note+1, month.txt_m_verif)
-            self.sh.cell(month.row_bal+1,self.c_val+1, month.verif)
-            
-            if month.verif:
+            if month.verif == -1:
+                self.sh.cell(month.row_bal+1,self.c_note+1).style = 'Neutral'
+                self.sh.cell(month.row_bal+1,self.c_val+1).style = 'Neutral'
+                self.sh.cell(month.row_bal+1,self.c_val+1, '')
+                self.sh.cell(month.row_bal+2,self.col_cat1+2, '')
+                self.sh.cell(C.MONTH_PREV_SOLD[1],C.MONTH_PREV_SOLD[2],'')
+            elif month.verif:
                 self.sh.cell(month.row_bal+1,self.c_note+1).style = 'Good'
                 self.sh.cell(month.row_bal+1,self.c_val+1).style = 'Good'
+                self.sh.cell(month.row_bal+1,self.c_val+1, f'{month.verif}')
+                
+                self.sh.cell(C.MONTH_PREV_SOLD[1],C.MONTH_PREV_SOLD[2],f'{C.MONTH_PREV_SOLD[0]}: {month.bal_prev} ({self.position_sold_init[2]})')
             else : 
                 self.sh.cell(month.row_bal+1,self.c_note+1).style = 'Bad'
                 self.sh.cell(month.row_bal+1,self.c_val+1).style = 'Bad'
-            
-            self.sh.merge_cells(start_row=month.row_bal+1, start_column=self.c_note+1, end_row=month.row_bal+2, end_column=self.c_note+1)
-            self.sh.merge_cells(start_row=month.row_bal+1, start_column=self.c_note+2, end_row=month.row_bal+2, end_column=self.c_note+2)
-            
+                self.sh.cell(month.row_bal+1,self.c_val+1, f'{month.verif}')
+                
+                self.sh.cell(C.MONTH_PREV_SOLD[1],C.MONTH_PREV_SOLD[2],f'{C.MONTH_PREV_SOLD[0]}: {month.bal_prev} ({self.position_sold_init[2]})')
+                
             self.sh.cell(month.row_bal+1,self.c_note+1).alignment=Alignment(horizontal='center', vertical='center')
             self.sh.cell(month.row_bal+1,self.c_val+1).alignment=Alignment(horizontal='center', vertical='center')
             
             month.write_cat1(self.sh,month.data.index.to_list()[0]+4,self.c_w1)
-            
-        self.wb.save(self.file_path)
+        try:
+            self.wb.save(self.file_path)
+            return True
+        except PermissionError:
+            messagebox.showerror('Error','Permission denied\nTry to close the excel first')
+            return False
     
     def popup_alrdy_open(self):
         root = tk.Tk()
@@ -274,7 +315,6 @@ class Month():
         self.txt_m_exp_real= 'Dépense réelle'
         self.txt_m_inc_real = 'Revenue réel'
         self.txt_m_bal_real= 'Solde estimé :'
-        self.txt_m_verif='Verif'
         
         self.row_s = None
         self.find_start()
@@ -319,9 +359,12 @@ class Month():
                     self.bal_usr = val[1]
                     self.row_bal = row
                     break
-        self.bal_pred = self.bal_prev + self.tot
-        self.verif_bal()
-        
+        if self.bal_prev is not None:
+            self.bal_pred = self.bal_prev + self.tot
+            self.verif_bal()
+        else:
+            self.verif = -1
+    
     def verif_bal(self):
         marg_p = 10 # %
         marg_q = 2
@@ -509,18 +552,13 @@ class Cat2():
 
 def compute_code_month(excel_path,sheet_name):
     print('\n*** Start ***')
-    # try: 
     sheet = Sheet(excel_path,sheet_name)
     print("Sheet opened")
     sheet.gen_data()
     print("Data generated")
-    sheet.write()
-    print("Success !")
-    # except Exception as e:
-    #     print(e)
-    # finally:
-    #     print('*** End ***\n')
-
+    if sheet.write():
+        print("Success !")
+        messagebox.showinfo("Success", "Operation completed successfully!")
 
 
 

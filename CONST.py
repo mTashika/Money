@@ -29,9 +29,9 @@ MONTH_ANG = [
     ]
 
 MONTH_FR = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-]
+    "janvier", "fevrier", "mars", "avril", "mai", "juin",
+    "juillet", "aout", "septembre", "octobre", "novembre", "decembre"
+    ]
 
 from openpyxl.styles import Alignment
 ALIGN_CENTER= Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -46,6 +46,7 @@ BALISE_SOLD_MONTH = '>'
 MONTH_SOLD_BALISE = f"{BALISE_SOLD_MONTH}solde fiche de paye (fin du mois)"
 MONTH_SOLD_EST = "Solde estimé :"
 MONTH_VERIF = "Verif"
+MONTH_PREV_SOLD = ['Solde précédent',2,1]
 
 
 NOT_REAL_ACTION = ['Virement Moi','NC']

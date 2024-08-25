@@ -1,21 +1,27 @@
-import re
+import customtkinter as ctk
 
-# Chaîne d'entrée
-input_text = "Situation de vos comptes\nau 28 mars 2024"
+def on_select(event):
+    selected_value = selected_option.get()
+    print(f"Valeur sélectionnée : {selected_value}")
 
-# self.B_DATE est la partie fixe de la chaîne
-self_B_DATE = "Situation de vos comptes\nau "
+# Création de la fenêtre principale
+root = ctk.CTk()
+root.title("Exemple de CTkComboBox avec StringVar")
 
-# Construire le pattern pour extraire le mois et l'année
-pattern = rf'{re.escape(self_B_DATE)}\s*\d{{2}}\s*([a-zA-Z]+)\s(\d{{4}})'
+# Variable StringVar pour stocker la valeur sélectionnée
+selected_option = ctk.StringVar(value="Sélectionnez une option")
 
-# Exécuter l'expression régulière pour trouver une correspondance
-match = re.search(pattern, input_text)
+# Liste des valeurs pour la liste déroulante
+values = ["Option 1", "Option 2", "Option 3", "Option 4"]
 
-if match:
-    mois = match.group(1)  # Premier groupe capturant le mois
-    annee = match.group(2)  # Deuxième groupe capturant l'année
-    print(f"Le mois est : {mois}")
-    print(f"L'année est : {annee}")
-else:
-    print("Aucune correspondance trouvée.")
+# Création du widget CTkComboBox, lié à la variable StringVar
+combo = ctk.CTkComboBox(root, values=values, variable=selected_option)
+
+# Configuration de la CTkComboBox
+combo.pack(pady=20)
+
+# Liaison d'un événement pour obtenir la valeur sélectionnée
+combo.bind("<<ComboboxSelected>>", on_select)
+
+# Lancer la boucle principale
+root.mainloop()

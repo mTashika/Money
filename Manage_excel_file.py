@@ -1,7 +1,7 @@
 import os
 import openpyxl
 import CONST as C
-from Tools import get_previous_month,write_list_to_excel
+from Tools import get_previous_month,write_list_to_excel,protect_ws,unprotect_cell
 from tkinter import messagebox
 
 class ManageExcelFile:
@@ -52,8 +52,11 @@ class ManageExcelFile:
         
     def save_wb(self):
         if self.wb_valid and self.ws_valid:
-            self.workbook.save(self.file_path)
-            print('Workbook saved')
+            try:
+                self.workbook.save(self.file_path)
+                print('Workbook saved')
+            except PermissionError:
+                messagebox.showerror('Error','Permission denied\nTry to close the excel first')
         else:
             print('Workbook not saved')
                 
@@ -100,7 +103,7 @@ class ManageExcelFile:
         # fill init sheet
         self.init_sheet['A1'].style="Accent1"
         self.init_sheet[C.INIT_SHEET_MONTH_CELL[1]].style="Accent1"
-        self.init_sheet[C.INIT_SHEET_SOLD_CELL[1]].style="Accent1"
+        self.init_sheet[C.INIT_SHEET_SOLD_CELL[1]].style="Input"
         self.init_sheet.merge_cells('A2:B2')
 
         self.init_sheet['A1'] = f'{C.INIT_SHEET_SOLD_TITLE}'
@@ -121,4 +124,9 @@ class ManageExcelFile:
         self.init_sheet[f'{C.INIT_SHEET_CAT1_COL}1'].alignment = C.ALIGN_CENTER
         self.init_sheet[f'{C.INIT_SHEET_CAT2_COL}1'].alignment = C.ALIGN_CENTER
         self.init_sheet[C.INIT_SHEET_SOLD_CELL[1]].alignment = C.ALIGN_CENTER
+
+        protect_ws(self.init_sheet)
+        unprotect_cell(self.init_sheet,C.INIT_SHEET_SOLD_CELL[1])
+        
+
         
