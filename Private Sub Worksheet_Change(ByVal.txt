@@ -1,0 +1,10 @@
+Private Sub Worksheet_Change(ByVal Target As Range)
+    Dim chkBox As CheckBox
+    Set chkBox = ActiveSheet.CheckBoxes("CheckBox1")
+    
+    ' Désactiver la case à cocher pour empêcher les clics manuels
+    chkBox.Enabled = False
+    
+    ' Décoche la case si une modification est détectée
+    chkBox.Value = xlOff
+End Sub

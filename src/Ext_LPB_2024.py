@@ -1,9 +1,17 @@
+"Fonction et classe d'extraction des données depuis un pdf la banque postal (marche en 2024)"
+
 import re
 from Tools import FinancialOperation
-BUY_VALUE = 1
-CRED_VALUE = 0
+import Const as C
+
+BALISE_CREDIT = ['VIREMENT DE ','VIREMENT INSTANTANE DE ','CREDIT']
+BALISE_BUY    = ['ACHAT CB ','PRELEVEMENT DE ','COTISATION TRIMESTRIELLE DE ',
+                'VIREMENT INSTANTANE A ','VIREMENT POUR']
+
+BUY_VALUE = C.EXT_BUY_VALUE
+CRED_VALUE = C.EXT_CRED_VALUE
 INTER_LINE = ' --- '
-a
+
 class ExtractionLbp2024:
     def __init__(self,text):
         self.text = text
@@ -15,17 +23,19 @@ class ExtractionLbp2024:
         self.extract_lpb_2024()
         self.set_sign()
         self.get_date()
-        return self.FinOp,self.month,self.year
+        self.get_sold()
+        return self.FinOp,self.month,self.year,self.sold_st,self.sold_ed,self.date_st,self.date_ed
         
     def init_balise(self):
         # Balise for the Positive (+) transaction
-        self.B_CREDIT = ['VIREMENT DE ','VIREMENT INSTANTANE DE ',
-                        'CREDIT']
+        self.B_CREDIT = BALISE_CREDIT
         # Balise for the negative (-) transaction
-        self.B_BUY = ['ACHAT CB ','PRELEVEMENT DE ','COTISATION TRIMESTRIELLE DE ',
-                    'VIREMENT INSTANTANE A ','VIREMENT POUR']
-        
+        self.B_BUY = BALISE_BUY
+        # Balise for the date
         self.B_DATE = 'Situation de vos comptes\nau '
+        " Balise for the start and end Sold"
+        self.B_SOLD_ST = 'Ancien solde au'
+        self.B_SOLD_ED = 'Nouveau solde au'
         
     def get_balise(self,line):
         'Return the balise name of the line'
@@ -80,6 +90,21 @@ class ExtractionLbp2024:
         pattern_date = rf'{re.escape(self.B_DATE)}\s*\d{{2}}\s*([a-zA-Z]+)\s(\d{{4}})'
         match = re.search(pattern_date,self.text)
         self.month,self.year = match.group(1),match.group(2)
+        pattern_date_st = rf"{re.escape(self.B_SOLD_ST)}\s(\d{{2}})/(\d{{2}})/\d{{4}}"
+        match_st = re.search(pattern_date_st,self.text)
+        self.date_st = f"{match_st.group(1)}/{match_st.group(2)}"
+        pattern_date_ed = rf"{re.escape(self.B_SOLD_ED)}\s(\d{{2}})/(\d{{2}})/\d{{4}}"
+        match_ed = re.search(pattern_date_ed,self.text)
+        self.date_ed = f"{match_ed.group(1)}/{match_ed.group(2)}"
+
+    def get_sold(self):
+        pattern_sold_st = rf'{re.escape(self.B_SOLD_ST)}\s+\d{{2}}/\d{{2}}/\d{{4}}\s+(\d{{1,3}}(?:[ \d]*\d)?\,\d{{2}})'
+        match_st = re.search(pattern_sold_st,self.text)
+        pattern_sold_ed = rf'{re.escape(self.B_SOLD_ED)}\s+\d{{2}}/\d{{2}}/\d{{4}}\s+(\d{{1,3}}(?:[ \d]*\d)?\,\d{{2}})'
+        match_ed = re.search(pattern_sold_ed,self.text)
+        self.sold_st = round(float(match_st.group(1).replace(',', '.').replace(' ', '')),2)
+        self.sold_ed = round(float(match_ed.group(1).replace(',', '.').replace(' ', '')),2)
+        
     
     def extract_lpb_2024(self):
         '''

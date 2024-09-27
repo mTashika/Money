@@ -1,39 +1,29 @@
 import openpyxl
-from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.worksheet.datavalidation import DataValidation
 
-# Create a new workbook and select the active worksheet
-wb = openpyxl.Workbook()
-ws = wb.active
-ws.title = "#Juin"
+# Charger le fichier Excel
+wb = openpyxl.load_workbook(r"D:\One Drive\OneDrive\Bureau\Classeur1.xlsx")
 
-# Fill colors
-header_fill = PatternFill(start_color="F4B084", end_color="F4B084", fill_type="solid")
-category_fill = PatternFill(start_color="BDD7EE", end_color="BDD7EE", fill_type="solid")
-description_fill = PatternFill(start_color="EAD1DC", end_color="EAD1DC", fill_type="solid")
-amount_fill = PatternFill(start_color="FFFFCC", end_color="FFFFCC", fill_type="solid")
-verification_fill = PatternFill(start_color="C6E0B4", end_color="C6E0B4", fill_type="solid")
+# Accéder aux feuilles
+sheet_source = wb['Tools']
+sheet_target = wb['Sheet1']
 
-# Header styling
-ws['A1'].value = "#Juin"
-ws['A1'].fill = header_fill
-ws.merge_cells('A1:E1')
-ws['A1'].alignment = Alignment(horizontal='center')
+# Récupérer toutes les valeurs de la colonne d'une autre feuille
+column_source = sheet_source['A']  # Par exemple, si la colonne est 'A'
+values = [cell.value for cell in column_source if cell.value is not None]
 
-# Categories and Descriptions styling
-for row in range(2, 26):
-    ws[f'A{row}'].fill = category_fill
-    ws[f'B{row}'].fill = description_fill
-    ws[f'C{row}'].fill = description_fill
-    ws[f'D{row}'].fill = amount_fill
+# Créer une chaîne de valeurs pour la validation de données
+value_list = ",".join(map(str, values))
 
-# Final row (solde fiche de paye and solde estimé)
-ws['A26'].value = ">solde fiche de paye (fin du mois)"
-ws['C26'].fill = amount_fill
-ws['D26'].fill = verification_fill
-ws['E26'].fill = verification_fill
+# Créer un objet de validation de données
+dv = DataValidation(type="list", formula1="=Tools!$A:$A")
 
-ws['A27'].value = "Solde estimé :"
-ws['C27'].fill = amount_fill
+# Définir la cellule où vous souhaitez ajouter la validation
+cell = sheet_target['M20']  # Par exemple, la cellule 'B2'
+sheet_target.add_data_validation(dv)
 
-# Save the workbook
-wb.save("styled_table.xlsx")
+# Ajouter la validation à la cellule cible
+dv.add(cell)
+
+# Sauvegarder le fichier
+wb.save(r"D:\One Drive\OneDrive\Bureau\Classeur1.xlsx")
