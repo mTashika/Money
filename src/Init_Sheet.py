@@ -89,6 +89,7 @@ class InitSheet:
         
         cell_title_ex.value = CET.INIT_TITLE_EXPECTED
         cell_title_re.value = CET.INIT_TITLE_REAL
+        cell_val_ex.value = '=B2+B8-F8'
 
     def write_income(self):
         cell_title_b = self.ws.cell(7,1)

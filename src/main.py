@@ -15,17 +15,17 @@ if __name__ == "__main__":
     StyleCell(workbook)
     ws = workbook.active
     mks = SheetMarker(ws)
-    PATH_EXTRACTION = r"D:\One Drive\OneDrive\Bureau\relevejuin.pdf"
-    extraction = PDFExtraction(PATH_EXTRACTION)
-    w = WriteExtraction(ws,extraction,mks)
-    if w.is_valid:
-        ws.cell(row=mks.B_VALID_EXT_PATH[0],column=mks.B_VALID_EXT_PATH[1]).value = PATH_EXTRACTION
-        ws.cell(row=mks.B_VALID_EXT_DATE[0],column=mks.B_VALID_EXT_DATE[1]).value = datetime.now()
+    # PATH_EXTRACTION = r"D:\One Drive\OneDrive\Bureau\relevejuin.pdf"
+    # extraction = PDFExtraction(PATH_EXTRACTION)
+    # w = WriteExtraction(ws,extraction,mks)
+    # if w.is_valid:
+    #     ws.cell(row=mks.B_VALID_EXT_PATH[0],column=mks.B_VALID_EXT_PATH[1]).value = PATH_EXTRACTION
+    #     ws.cell(row=mks.B_VALID_EXT_DATE[0],column=mks.B_VALID_EXT_DATE[1]).value = datetime.now()
     
-    # realisation = MonthRealisation(ws,mks)
-    # WriteRealisation(ws,mks,realisation)
+    realisation = MonthRealisation(ws,mks)
+    WriteRealisation(ws,mks,realisation)
     # ws.cell(row=mks.B_VALID_REAL_DATE[0],column=mks.B_VALID_REAL_DATE[1]).value = datetime.now()
-    # Valid(ws,mks)
+    Valid(ws,mks)
     
     
     workbook.save(path)
