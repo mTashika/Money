@@ -1,0 +1,19 @@
+REAL_TOT      = 'Total transaction'
+REAL_TOT_EXP  = 'Dépense totale'
+REAL_TOT_INC  = 'Revenue totale'
+REAL_TOT_REAL = 'Total réelle'
+REAL_TOT_REAL_EXP = 'Dépense réelle'
+REAL_TOT_REAL_INC = 'Revenue réel'
+REAL_C1_TOT = "Total"
+
+INIT_DATE = "Date"
+INIT_SOLD_ST = "Start"
+INIT_TITLE_BILAN = "End"
+INIT_TITLE_IN = "Income"
+INIT_TITLE_LOS = "Loss"
+INIT_VALID = "Validation"
+INIT_DETAIL = "Detail"
+INIT_TITLE_EXPECTED = 'Expected'
+INIT_TITLE_REAL = 'Real'
+INIT_TITLE_TOT = 'Total'
+INIT_TITLE_NAME = 'Name'

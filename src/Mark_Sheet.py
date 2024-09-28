@@ -8,19 +8,21 @@ class SheetMarker():
         self.B_BILAN_ED_SOLDEX = None
         self.B_BILAN_ED_SOLDRE = None
         self.B_BILAN_ED_VAL = None
-        self.B_BILAN_ED_CHECK_REAL = None
-        self.B_BILAN_ED_CHECK_EXT = None
         
         self.B_IN_NAME_COL = None # income name column
         self.B_IN_EX_COL = None # income expected column
         self.B_IN_RE_COL = None # income real column
         self.B_IN_ST_LINE = None # income start line (const)
+        self.B_IN_TOT_EX = None # income total expected cell
+        self.B_IN_TOT_REAL = None # income total real cell
         self.B_in_ed_line = None # income end line
         
         self.B_LOS_NAME_COL = None # loss name column
         self.B_LOS_EX_COL = None # loss expected column
         self.B_LOS_RE_COL = None # loss real column
         self.B_LOS_ST_LINE = None # loss start line (const)
+        self.B_LOS_TOT_EX = None # loss total expected cell
+        self.B_LOS_TOT_REAL = None # loss total real cell
         self.B_los_ed_line = None # loss end line
         
         self.B_DETAIL_LINE_ST = None # detail line start
@@ -35,6 +37,7 @@ class SheetMarker():
         self.b_ext_verif = None # extraction verif cell
         
         self.B_REAL_COL_ST = None # realisation column start
+        self.B_REAL_COL_ED = None # realisation column end
         
         self.B_VALID_EXT_PATH = None # validity extraction path cell
         self.B_VALID_EXT_DATE = None # validity extraction date cell
@@ -55,19 +58,21 @@ class SheetMarker():
                     self.B_BILAN_ED_SOLDEX = [row+1,col+1]
                     self.B_BILAN_ED_SOLDRE = [row+1,col+2]
                 elif cell_value == BE.BILAN_ED_VAL:
-                    self.B_BILAN_ED_VAL = [row,col-2]
-                    self.B_BILAN_ED_CHECK_REAL = [row,col-1]
-                    self.B_BILAN_ED_CHECK_EXT = [row-1,col-1]
+                    self.B_BILAN_ED_VAL = [row,col]
                 elif cell_value == BE.INCOME:
                     self.B_IN_NAME_COL = col
                     self.B_IN_EX_COL = col+1
                     self.B_IN_RE_COL = col+2
-                    self.B_IN_ST_LINE = row+2
+                    self.B_IN_ST_LINE = row+4
+                    self.B_IN_TOT_EX = [row+1,col+1]
+                    self.B_IN_TOT_REAL = [row+1,col+2]
                 elif cell_value == BE.LOSS:
                     self.B_LOS_NAME_COL = col
                     self.B_LOS_EX_COL = col+1
                     self.B_LOS_RE_COL = col+2
-                    self.B_LOS_ST_LINE = row+2
+                    self.B_LOS_ST_LINE = row+4
+                    self.B_LOS_TOT_EX = [row+1,col+1]
+                    self.B_LOS_TOT_REAL = [row+1,col+2]
                 elif cell_value == BE.DETAIL:
                     self.B_DETAIL_LINE_ST = row+1
                     self.B_ID_C1_COL = col
@@ -75,15 +80,15 @@ class SheetMarker():
                     self.B_EXT_NAME_COL = col+2
                     self.B_EXT_VALUE_COL = col+3
                     self.B_REAL_COL_ST = col+5
+                    self.B_REAL_COL_ED = self.B_REAL_COL_ST+5
                 elif cell_value == BE.VALIDITY:
                     self.B_VALID_EXT_PATH = [row+1,col+2]
                     self.B_VALID_EXT_DATE = [row+2,col+2]
                     self.B_VALID_ID_DATE = [row+3,col+2]
                     self.B_VALID_REAL_DATE = [row+4,col+2]
                 elif cell_value == BE.EXT_VAL:
-                    self.b_ext_sold_ed_est = [row+1,col+2]
-                    self.b_ext_sold_ed_true = [row+2,col+2]
-                    self.b_ext_verif = [row+1,col+3]
+                    self.b_ext_sold_ed_est = [row,col+1]
+                    self.b_ext_verif = [row,col+2]
                 # print(f"Valeur à la ligne {row}, colonne {col} : {cell_value}")
                 
         for row in range(self.B_IN_ST_LINE, self.B_DETAIL_LINE_ST):
@@ -109,7 +114,7 @@ class SheetMarker():
                     self.B_ext_ed_line = row-1
                     if self.B_ext_ed_line<self.B_DETAIL_LINE_ST:
                         self.B_ext_ed_line=self.B_DETAIL_LINE_ST
-                    break
+
             
     def print(self):
         for attr, value in vars(self).items():
@@ -117,7 +122,7 @@ class SheetMarker():
                 print(f"{attr}: {value}")
             else:
                 print(f"{attr}: None")
-        
+
 if __name__ == "__main__":
     import openpyxl
     path = r"D:\One Drive\OneDrive\Bureau\Classeur1.xlsx"

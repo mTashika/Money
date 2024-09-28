@@ -194,15 +194,12 @@ class Sheet():
             self.months_obj.append(Month(m_data,self.get_bal_prev()))
 
     def clear_zone(self):        
-        
         mcr_coord_list = [mcr.coord for mcr in self.sh.merged_cells.ranges]
-    
         for mcr in mcr_coord_list:
             min_col, _, _, _ = range_boundaries(mcr)
             if min_col in COL_TO_RESET:
                 self.sh.unmerge_cells(mcr)
-                
-        
+
         for idx, col in enumerate(self.sh.iter_cols(), start=1):
             if idx in COL_TO_RESET:
                 for cell in col:

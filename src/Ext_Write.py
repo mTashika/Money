@@ -1,6 +1,8 @@
 import Const as C
 import Const_Balise_Excel as BE
 from openpyxl.worksheet.datavalidation import DataValidation
+from Tools import clear_zone
+
 class WriteExtraction():
     def __init__(self,sheet,extraction,markers):
         self.extraction = extraction
@@ -10,13 +12,13 @@ class WriteExtraction():
         self.supress_old_ext()
         self.write()
         self.up_mrks()
-        self.format_extraction()
+        self.set_cells_format()
         self.write_validation()
         self.write_date()
         self.write_sold()
 
     def supress_old_ext(self):
-        self.ws.delete_rows(self.mks.B_DETAIL_LINE_ST,self.ws.max_row + 1)
+        clear_zone(self.ws,self.mks.B_DETAIL_LINE_ST,self.ws.max_row+1,self.mks.B_ID_C1_COL,self.mks.B_REAL_COL_ED)
         
     def write(self):
         for row,fo in enumerate(self.fo,start=self.mks.B_DETAIL_LINE_ST):
@@ -29,8 +31,7 @@ class WriteExtraction():
         self.mks.b_ext_sold_ed_true = [self.mks.B_ext_ed_line+2,self.mks.B_ID_C2_COL]
         self.mks.b_ext_verif = [self.mks.b_ext_sold_ed_est[0],self.mks.B_EXT_NAME_COL]
     
-    def format_extraction(self):
-        
+    def set_cells_format(self):
         dv1 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$A:$A")
         dv2 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$B:$B")
         self.ws.add_data_validation(dv2)
@@ -53,9 +54,6 @@ class WriteExtraction():
         cell_txt_est = self.ws.cell(row=self.mks.b_ext_sold_ed_est[0],column=self.mks.b_ext_sold_ed_est[1]-1)
         cell_txt_est.value = BE.EXT_VAL
         cell_txt_est.number_format  = f';;;"{C.EXT_VALID_TXT_SOLD_EST}"'
-        # true
-        self.ws.cell(row=self.mks.b_ext_sold_ed_true[0],column=self.mks.b_ext_sold_ed_true[1]).value = self.extraction.sold_ed
-        self.ws.cell(row=self.mks.b_ext_sold_ed_true[0],column=self.mks.b_ext_sold_ed_true[1]-1).value = C.EXT_VALID_TXT_SOLD_TRUE
         # validation
         cell_val = self.ws.cell(row=self.mks.b_ext_verif[0],column=self.mks.b_ext_verif[1])
         cell_val.value = self.extraction.validation

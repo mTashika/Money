@@ -1,6 +1,7 @@
 import Const as C
 import unicodedata
-from openpyxl.utils import range_boundaries
+from openpyxl.utils import range_boundaries,get_column_letter
+import numpy as np
 
 def check_cell_value(cell_value):
     if cell_value is None:
@@ -11,22 +12,28 @@ def check_cell_value(cell_value):
         return 1
     if isinstance(cell_value, float):
         return 2
+    
+def clear_zone(ws,minrow,maxrow,mincol,maxcol):        
+        mcr_coord_list = [mcr.coord for mcr in ws.merged_cells.ranges]
+        for mcr in mcr_coord_list:
+            min_col, min_row, max_col, max_row = range_boundaries(mcr)
+            if min_col>=mincol and max_col<=maxcol and min_row>=minrow and max_row<=maxrow:
+                ws.unmerge_cells(mcr)
+        for row in range(minrow, maxrow + 1):
+            for col in range(mincol, maxcol + 1):
+                cell = ws.cell(row=row, column=col)
+                cell.value = None
+                cell.style = 'Normal'
+def unmerge_cells_by_coords(ws, start_row, start_col, end_row, end_col):
+    start_cell = get_column_letter(start_col) + str(start_row)
+    end_cell = get_column_letter(end_col) + str(end_row)
+    ws.unmerge_cells(f'{start_cell}:{end_cell}')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def generate_table(t_size, val_max):
+    table = []
+    for i in range(t_size):
+        table.append((i % val_max)+1)  # Génère un nombre de 1 à x en boucle
+    return table
 
 
 def remove_accents(input_str):
@@ -177,3 +184,5 @@ def is_file_closed(file_path):
     except IOError:
         # Si une exception est levée, le fichier est probablement encore ouvert
         return False
+def verif_nan(val):
+    return ~(isinstance(val, (int,float)) and np.isnan(val))
