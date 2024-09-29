@@ -2,19 +2,20 @@ from Mark_Sheet import SheetMarker
 import Const_txt_excel as CET
 import Const_Balise_Excel as CEB
 from openpyxl.styles import Font,Alignment,PatternFill,Side,Border
+from Tools import unprotect_cell,unprotect_range,protect_ws
 
 FORMAT_COMPTA = "0,00 €"
 class InitSheet:
     def __init__(self, ws):
         self.ws = ws
-        # self.set_marker()
-        # self.mks = SheetMarker(ws)  # Assurez-vous que SheetMarker est défini correctement
+        self.set_big_border()
         self.write_start()
         self.write_bilan()
         self.write_income()
         self.write_loss()
         self.write_detail()
-
+        self.write_validity()
+        self.set_protection()
 
     def write_start(self):
         cell_date_b = self.ws.cell(1, 1)
@@ -91,6 +92,17 @@ class InitSheet:
         cell_title_re.value = CET.INIT_TITLE_REAL
         cell_val_ex.value = '=B2+B8-F8'
 
+    def set_big_border(self):
+        for col in range(1, 11):
+            cell = ws.cell(row=10, column=col)
+            cell.border =  Border(bottom=Side(border_style='dotted', color='000000'))
+        for row in range(1, 10):
+            cell = ws.cell(row=row, column=11)
+            cell.border =  Border(right=Side(border_style='dotted', color='000000'))
+        
+        cell = ws.cell(row=10, column=11)
+        cell.border =  Border(bottom=Side(border_style='dotted', color='000000'),right=Side(border_style='dotted', color='000000'))
+        
     def write_income(self):
         cell_title_b = self.ws.cell(7,1)
         cell_title_tot = self.ws.cell(8,1)
@@ -216,8 +228,110 @@ class InitSheet:
         cell_detail_b.number_format = f';;;"{CET.INIT_DETAIL}"'
 
     def write_validity(self):
-        pass
+        cell_title_b       = self.ws.cell(1,8)
+        cell_title_ex1     = self.ws.cell(2,8)
+        cell_title_ex2     = self.ws.cell(3,8)
+        cell_title_id      = self.ws.cell(4,8)
+        cell_title_re      = self.ws.cell(5,8)
+        cell_title_path    = self.ws.cell(2,9)
+        cell_title_date_ex = self.ws.cell(3,9)
+        cell_title_date_id = self.ws.cell(4,9)
+        cell_title_date_re = self.ws.cell(5,9)
+        cell_val_ex_path   = self.ws.cell(2,10)
+        cell_val_ex_date   = self.ws.cell(3,10)
+        cell_val_id_date   = self.ws.cell(4,10)
+        cell_val_re_date   = self.ws.cell(5,10)
+        
+        cell_title_b.font = Font(size=9, color="FFFFFF")
+        cell_title_ex1.font = Font(size=9, color="FFFFFF")
+        cell_title_ex2.font = Font(size=9, color="FFFFFF")
+        cell_title_id.font = Font(size=9, color="FFFFFF")
+        cell_title_re.font = Font(size=9, color="FFFFFF")
+        cell_title_path.font = Font(size=9, color="FFFFFF")
+        cell_title_date_ex.font = Font(size=9, color="FFFFFF")
+        cell_title_date_id.font = Font(size=9, color="FFFFFF")
+        cell_title_date_re.font = Font(size=9, color="FFFFFF")
+        cell_val_ex_path.font = Font(size=9, color="FFFFFF")
+        cell_val_ex_date.font = Font(size=9, color="FFFFFF")
+        cell_val_id_date.font = Font(size=9, color="FFFFFF")
+        cell_val_re_date.font = Font(size=9, color="FFFFFF")
+        
+        cell_title_b.alignment = Alignment(horizontal='center', vertical='center')
+        cell_title_ex1.alignment = Alignment(horizontal='left', vertical='center')
+        cell_title_ex2.alignment = Alignment(horizontal='left', vertical='center')
+        cell_title_id.alignment = Alignment(horizontal='left', vertical='center')
+        cell_title_re.alignment = Alignment(horizontal='left', vertical='center')
+        cell_title_path.alignment = Alignment(horizontal='left', vertical='center')
+        cell_title_date_ex.alignment = Alignment(horizontal='left', vertical='center')
+        cell_title_date_id.alignment = Alignment(horizontal='left', vertical='center')
+        cell_title_date_re.alignment = Alignment(horizontal='left', vertical='center')
+        cell_val_ex_path.alignment = Alignment(horizontal='left', vertical='center')
+        cell_val_ex_date.alignment = Alignment(horizontal='left', vertical='center')
+        cell_val_id_date.alignment = Alignment(horizontal='left', vertical='center')
+        cell_val_re_date.alignment = Alignment(horizontal='left', vertical='center')
+        
+        # fill_color = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+        # cell_title_b.fill = fill_color
+        # cell_title_ex1.fill = fill_color
+        # cell_title_ex2.fill = fill_color
+        # cell_title_id.fill = fill_color
+        # cell_title_re.fill = fill_color
+        # cell_title_path.fill = fill_color
+        # cell_title_date_ex.fill = fill_color
+        # cell_title_date_id.fill = fill_color
+        # cell_title_date_re.fill = fill_color
+        # cell_val_ex_path.fill = fill_color
+        # cell_val_ex_date.fill = fill_color
+        # cell_val_id_date.fill = fill_color
+        # cell_val_re_date.fill = fill_color
+        
+        # cell_title_b.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_title_ex1.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_title_ex2.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_title_id.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_title_re.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_title_path.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_title_date_ex.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_title_date_id.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_title_date_re.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_val_ex_path.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_val_ex_date.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_val_id_date.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        # cell_val_re_date.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
+        
+        self.ws.merge_cells(start_row=1, start_column=8, end_row=1, end_column=10)
+        
+        cell_title_b.value = CEB.VALIDITY
+        cell_title_b.number_format = f';;;"{CET.INIT_TITLE_VALIDITY}"'
+        cell_title_ex1.value = CET.INIT_TITLE_EXTRACTION
+        cell_title_ex2.value = CET.INIT_TITLE_EXTRACTION
+        cell_title_id.value = CET.INIT_TITLE_IDENTIFICATION
+        cell_title_re.value = CET.INIT_TITLE_REALISATION
+        cell_title_path.value = CET.INIT_TITLE_PATH
+        cell_title_date_ex.value = CET.INIT_TITLE_DATE
+        cell_title_date_id.value = CET.INIT_TITLE_DATE
+        cell_title_date_re.value = CET.INIT_TITLE_DATE
 
+    def set_protection(self):
+        # protect all the sheet
+        for row in self.ws.iter_rows():
+            for cell in row:
+                cell.protection = protect_ws(locked=True)
+        
+        # unprotect certain part
+        cell_val_ex = self.ws.cell(8,2)
+        cell_val_re = self.ws.cell(8,3)
+        unprotect_cell(cell_val_ex)
+        unprotect_cell(cell_val_re)
+        cell_val_ex = self.ws.cell(8,6)
+        cell_val_re = self.ws.cell(8,7)
+        unprotect_cell(cell_val_ex)
+        unprotect_cell(cell_val_re)
+        
+        unprotect_range(self.ws,11,25,1,7)
+        unprotect_range(self.ws,7,25,8,11)
+        unprotect_range(self.ws,1,100,12,25)
+    
 if __name__ == "__main__":
     import openpyxl
     from Styles import StyleCell
