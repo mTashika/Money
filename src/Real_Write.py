@@ -2,7 +2,7 @@ import Const as C
 import Const_txt_excel as CTE
 from Const import REAL_LINE_SPACE,REAL_LINE_SPACE_SIGN,REAL_SPACE_INC_LOSS_2_DETAIL
 from openpyxl.styles import Side, Border,Alignment
-from Tools import clear_zone,generate_table,unmerge_cells_by_coords,check_cell_value
+from Tools import clear_zone,generate_table,unmerge_cells_by_coords,check_cell_value,unprotect_range
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
@@ -206,6 +206,9 @@ class WriteRealisation():
         # merge detail
         self.ws.merge_cells(start_row=self.mks.B_DETAIL_LINE_ST-1, start_column=self.mks.B_ID_C1_COL,
                             end_row=self.mks.B_DETAIL_LINE_ST-1, end_column=self.mks.B_REAL_COL_ED)
+        
+        # unprotect one line
+        unprotect_range(self.ws,self.mks.B_DETAIL_LINE_ST-1,self.mks.B_DETAIL_LINE_ST-1,self.mks.B_ID_C1_COL,self.mks.B_REAL_COL_ED)
         
     def set_cells_format_extraction(self):
         dv1 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$A:$A")

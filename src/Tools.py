@@ -1,5 +1,6 @@
 import Const as C
 import unicodedata
+from openpyxl.styles import Protection
 from openpyxl.utils import range_boundaries,get_column_letter
 import numpy as np
 
@@ -158,21 +159,24 @@ def update_init_sold(wb,sheet_name):
             ws_init[C.INIT_SHEET_SOLD_CELL[1]] = None
 
 def protect_ws(ws):
-    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+    for row in ws.iter_rows():
+            for cell in row:
+                cell.protection = Protection(locked=True)
+    ws.protection.sheet = True
+    
+def protect_range(ws,min_row, max_row, min_col, max_col):
+    for row in ws.iter_rows(min_row=min_row, max_row=max_row, min_col=min_col, max_col=max_col):
         for cell in row:
             cell.protection = cell.protection.copy(locked=True)
     ws.protection.sheet = True
     
-def unprotect_range(ws, cell_range):
-    # Déprotéger une plage de cellules spécifique
-    min_col, min_row, max_col, max_row = range_boundaries(cell_range)
+def unprotect_range(ws, min_row, max_row, min_col, max_col):
     for row in ws.iter_rows(min_row=min_row, max_row=max_row, min_col=min_col, max_col=max_col):
         for cell in row:
             cell.protection = cell.protection.copy(locked=False)
     ws.protection.sheet = True
     
-def unprotect_cell(ws, cell_coordinate):
-    cell = ws[cell_coordinate]
+def unprotect_cell(cell):
     cell.protection = cell.protection.copy(locked=False)
     
 def is_file_closed(file_path):
