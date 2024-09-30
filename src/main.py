@@ -37,7 +37,7 @@ class App(ctk.CTk):
         center_window(self,800, 550)
 
         # Variables pour stocker les chemins
-        self.pdf_path = ctk.StringVar(value="D:/One Drive/OneDrive/Bureau/R1.pdf")
+        self.pdf_path = ctk.StringVar(value="D:/One Drive/OneDrive/Bureau/R1.pdf; D:/One Drive/OneDrive/Bureau/R2.pdf")
         self.excel_dir_path = ctk.StringVar(value="D:/.Perso_local/Projects/Project_Money/Test_File")
         self.year_var = ctk.StringVar(value="2024")
         self.year_var.trace_add("write", self.update_combo_box)
@@ -192,9 +192,9 @@ class App(ctk.CTk):
     
     ########## COMMAND ##########
     def browse_pdf(self):
-        file_path = filedialog.askopenfilename(title="Sélectionner un fichier PDF", filetypes=[("PDF Files", "*.pdf")])
-        if file_path:
-            self.pdf_path.set(file_path)
+        file_paths = filedialog.askopenfilenames(title="Sélectionner un fichier PDF", filetypes=[("PDF Files", "*.pdf")])
+        if file_paths:
+            self.pdf_path.set("; ".join(file_paths))
     
     def browse_excel_dir(self):
         dir_path = filedialog.askdirectory(title="Sélectionner un dossier")
@@ -248,38 +248,44 @@ class App(ctk.CTk):
             self.show_loading()
         
     def launch_creation_extraction(self):
-        extraction = PDFExtraction(self.pdf_path.get())
-        self.year = normalize_string(extraction.year)
-        self.month = normalize_string(extraction.month)
-        self.manage_excel_file("Extraction")
-        if self.wb and self.ws:
-            if not self.managment.ws_creat:
-                self.toggle_pause()
-                if not messagebox.askyesno("Confirmation", f"This sheet ({self.managment.ws_name}) already exist in {self.managment.file_path}, do you want to update it ?"):
-                    self.after(0, self.hide_loading)
-                    return
-                self.toggle_pause()
-            StyleCell(self.wb)
-            mks = SheetMarker(self.ws)
-            WriteExtraction(self.ws,extraction,mks)
-            Valid(self.ws,mks)
-            self.managment.save_wb()
-            self.after(0, self.hide_loading)
-            messagebox.showinfo("Success", "Operation completed successfully!")
-            self.wb.close()
-        else:
-            self.after(0, self.hide_loading)
-            messagebox.showerror("Error", "ERROR !")
+        file_paths_list = [path.strip() for path in self.pdf_path.get().split(';')]
+        for path_excel in file_paths_list:
+            self.is_paused = False
+            extraction = PDFExtraction(path_excel)
+            self.year = normalize_string(extraction.year)
+            self.month = normalize_string(extraction.month)
+            self.manage_excel_file("Extraction")
+            f_update = True
+            if self.wb and self.ws:
+                if not self.managment.ws_creat:
+                    self.is_paused = True
+                    if not messagebox.askyesno("Confirmation", f"This sheet ({self.managment.ws_name}) already exist in {self.managment.file_path}, do you want to update it ?"):
+                        f_update = False
+                if f_update:
+                    self.is_paused = False
+                    StyleCell(self.wb)
+                    mks = SheetMarker(self.ws)
+                    WriteExtraction(self.ws,extraction,mks)
+                    Valid(self.ws,mks)
+                    self.managment.save_wb()
+                    self.is_paused = True
+                    messagebox.showinfo("Success", f"Extraction for {self.managment.ws_name} completed successfully!")
+            else:
+                self.is_paused = True
+                messagebox.showerror("Error", f"ERROR during Extraction for {self.managment.ws_name}!")
+        self.after(0, self.hide_loading)
+        self.wb.close()
 
     def launch_realisation(self):
+        self.is_paused = False
         self.year = normalize_string(self.year_var.get())
         self.month = normalize_string(self.month_var.get().lower())
         self.manage_excel_file("Realisation")
         if self.wb:
             if self.ws:
-                self.toggle_pause()
-                if messagebox.askyesno("Confirmation", f"This sheet ({self.managment.ws_name}) already exist in {self.managment.file_path}, do you want to update it ?"):
-                    self.toggle_pause()
+                self.is_paused = True
+                if messagebox.askyesno("Confirmation", f"{self.managment.ws_name} sheet already exist here:\n{self.managment.file_path}\n\nDo you want to update it ?"):
+                    self.is_paused = False
                     StyleCell(self.wb)
                     mks = SheetMarker(self.ws)
                     realisation = MonthRealisation(self.ws,mks)
@@ -287,14 +293,14 @@ class App(ctk.CTk):
                     Valid(self.ws,mks)
                     self.managment.save_wb()
                     self.after(0, self.hide_loading)
-                    messagebox.showinfo("Success", "Operation completed successfully!")
+                    messagebox.showinfo("Success", f"Operation completed successfully for {self.managment.ws_name}!")
                     self.wb.close()
             else:
                 self.after(0, self.hide_loading)
-                messagebox.showinfo("Info", f"Create the sheet {self.managment.ws_name} with the first extraction before")
+                messagebox.showinfo("Info", f"Create the sheet {self.month} before")
         else:
             self.after(0, self.hide_loading)
-            messagebox.showinfo("Info", f"Build the workbook with the first extraction before")
+            messagebox.showinfo("Info", f"Build the workbook {self.year} before")
         
     def manage_excel_file(self,man_type):
         self.managment = ManageExcelFile(self.excel_dir_path.get(),self.year,self.month,man_type)
@@ -308,6 +314,7 @@ class App(ctk.CTk):
         self.animate_gif()
         
     def hide_loading(self):
+        self.is_paused = True
         self.loading_label.pack_forget()
         self.enable_excel()
         if self.checkbox_update_var.get():
