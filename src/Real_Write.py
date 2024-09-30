@@ -2,7 +2,8 @@ import Const as C
 import Const_txt_excel as CTE
 from Const import REAL_LINE_SPACE,REAL_LINE_SPACE_SIGN,REAL_SPACE_INC_LOSS_2_DETAIL
 from openpyxl.styles import Side, Border,Alignment
-from Tools import clear_zone,generate_table,unmerge_cells_by_coords,check_cell_value,unprotect_range
+from Tools import clear_zone,generate_table,unmerge_cells_by_coords,check_cell_value
+from Protection import unprotect_range
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
@@ -22,6 +23,7 @@ class WriteRealisation():
         self.clear_real()
         self.print_real_income()
         self.print_real_loss()
+        self.print_real_bilan()
         self.print_tot()
         self.print_cat()
         self.set_cells_format_extraction()
@@ -37,7 +39,7 @@ class WriteRealisation():
             self.ws.cell(row,self.mks.B_LOS_RE_COL).value = None
             if self.ws.cell(row,self.mks.B_LOS_EX_COL).value is None:
                 self.ws.cell(row,self.mks.B_LOS_NAME_COL).value = None
-            
+    
     def print_tot(self):
         # total name
         r1 = self.mks.B_DETAIL_LINE_ST
@@ -193,7 +195,6 @@ class WriteRealisation():
     def maj_formule_loss(self):
         self.ws.cell(self.mks.B_LOS_TOT_EX[0],self.mks.B_LOS_TOT_EX[1]).value = f'=SUM({get_column_letter(self.mks.B_LOS_EX_COL)}{self.mks.B_LOS_ST_LINE}:{get_column_letter(self.mks.B_LOS_EX_COL)}{self.mks.B_los_ed_line})'
         self.ws.cell(self.mks.B_LOS_TOT_REAL[0],self.mks.B_LOS_TOT_REAL[1]).value = f'=SUM({get_column_letter(self.mks.B_LOS_RE_COL)}{self.mks.B_LOS_ST_LINE}:{get_column_letter(self.mks.B_LOS_RE_COL)}{self.mks.B_los_ed_line})'
-
         
     def extend_income_loss(self,type):
         #unmerge detail
@@ -209,7 +210,10 @@ class WriteRealisation():
         
         # unprotect one line
         unprotect_range(self.ws,self.mks.B_DETAIL_LINE_ST-1,self.mks.B_DETAIL_LINE_ST-1,self.mks.B_ID_C1_COL,self.mks.B_REAL_COL_ED)
-        
+    
+    def print_real_bilan(self):
+        self.ws.cell(self.mks.B_BILAN_ED_SOLDRE[0],self.mks.B_BILAN_ED_SOLDRE[1]).value = self.realisation.tot_sold_real
+
     def set_cells_format_extraction(self):
         dv1 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$A:$A")
         dv2 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$B:$B")

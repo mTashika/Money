@@ -1,6 +1,7 @@
 "Read the PADf and extract information"
 import pdfplumber
 from Ext_LPB_2024 import ExtractionLbp2024
+from tkinter import messagebox
 from Const import EXT_VALID_ERR_POURC
 
 class PDFExtraction():
@@ -22,11 +23,13 @@ class PDFExtraction():
         
         
     def read_pdf(self):
-        with pdfplumber.open(self.file_path) as pdf:
-            for page in pdf.pages:
-                self.text += page.extract_text()
-        # print(self.text)
-                
+        try:
+            with pdfplumber.open(self.file_path) as pdf:
+                for page in pdf.pages:
+                    self.text += page.extract_text()
+        except FileNotFoundError:
+            messagebox.showerror("Error", "Invalid PDF Path")
+            
     def extract(self):
         self.financial_operations,self.month,self.year,self.sold_st,self.sold_ed,self.date_st,self.date_ed = ExtractionLbp2024(self.text).get_value()
     

@@ -2,6 +2,7 @@ import Const as C
 import Const_Balise_Excel as BE
 from openpyxl.worksheet.datavalidation import DataValidation
 from Tools import clear_zone
+from Protection import set_protection
 
 class WriteExtraction():
     def __init__(self,sheet,extraction,markers):
@@ -16,6 +17,7 @@ class WriteExtraction():
         self.write_validation()
         self.write_date()
         self.write_sold()
+        set_protection(self.ws,self.mks)
 
     def supress_old_ext(self):
         clear_zone(self.ws,self.mks.B_DETAIL_LINE_ST,self.ws.max_row+1,self.mks.B_ID_C1_COL,self.mks.B_REAL_COL_ED)
@@ -66,6 +68,7 @@ class WriteExtraction():
     def write_sold(self):
         self.ws.cell(row=self.mks.B_BILAN_ST_SOLD[0],column=self.mks.B_BILAN_ST_SOLD[1]).value = self.extraction.sold_st
         self.ws.cell(row=self.mks.B_BILAN_ED_SOLDRE[0],column=self.mks.B_BILAN_ED_SOLDRE[1]).value = self.extraction.sold_ed
+    
     
     def is_valid(self):
         return True

@@ -1,5 +1,4 @@
 "Fonction et classe d'extraction des données depuis un pdf la banque postal (marche en 2024)"
-
 import re
 from Tools import FinancialOperation
 import Const as C

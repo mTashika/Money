@@ -4,7 +4,12 @@ from Const import TOOL_SHEET_NAME,CAT_1,CAT_2,INIT_SHEET_CAT1_TITLE,INIT_SHEET_C
 class InitWorkbook():
     def __init__(self,wb):
         self.wb = wb
+        self.remove_all_sheet()
         self.init_tool_sheet()
+        
+    def remove_all_sheet(self):
+        for sheet in self.wb.sheetnames:
+            self.wb.remove(self.wb[sheet])
         
     def init_tool_sheet(self):
         # protect all the sheet

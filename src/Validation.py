@@ -18,7 +18,7 @@ class Valid():
         sold_start = ws.cell(row=mks.B_BILAN_ST_SOLD[0],column=mks.B_BILAN_ST_SOLD[1]).value
         sold_end = ws.cell(row=mks.B_BILAN_ED_SOLDRE[0],column=mks.B_BILAN_ED_SOLDRE[1]).value
         cell_val = ws.cell(row=mks.B_BILAN_ED_VAL[0],column=mks.B_BILAN_ED_VAL[1])
-        if round(sold_start + real_income + real_loss,3) == round(sold_end,3):
+        if round(sold_start + real_income + real_loss,0) == round(sold_end,0):
             cell_val.style = 'Good'
         elif (not ws.cell(row=mks.b_ext_verif[0],column=mks.b_ext_verif[1]).value or 
             check_cell_value(real_loss) not in [1,2] or

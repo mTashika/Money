@@ -1,14 +1,15 @@
-from Mark_Sheet import SheetMarker
 import Const_txt_excel as CET
 import Const_Balise_Excel as CEB
 from openpyxl.styles import Font,Alignment,PatternFill,Side,Border
-from Tools import unprotect_cell,unprotect_range,protect_ws
+from Protection import unprotect_cell,unprotect_range,protect_ws
 
-FORMAT_COMPTA = "0,00 €"
+FORMAT_COMPTA = "0.00 €"
 class InitSheet:
     def __init__(self, ws):
         self.ws = ws
         self.set_big_border()
+        self.set_column_width()
+        self.set_line_height()
         self.write_start()
         self.write_bilan()
         self.write_income()
@@ -17,6 +18,42 @@ class InitSheet:
         self.write_validity()
         self.set_protection()
 
+    def set_big_border(self):
+        for col in range(1, 11):
+            cell = self.ws.cell(row=10, column=col)
+            cell.border =  Border(bottom=Side(border_style='dotted', color='000000'))
+        for row in range(1, 10):
+            cell = self.ws.cell(row=row, column=11)
+            cell.border =  Border(right=Side(border_style='dotted', color='000000'))
+        
+        cell = self.ws.cell(row=10, column=11)
+        cell.border =  Border(bottom=Side(border_style='dotted', color='000000'),right=Side(border_style='dotted', color='000000'))
+
+    def set_column_width(self):
+        self.ws.column_dimensions['A'].width = 15
+        self.ws.column_dimensions['B'].width = 17
+        self.ws.column_dimensions['C'].width = 24
+        self.ws.column_dimensions['D'].width = 12
+        self.ws.column_dimensions['E'].width = 10
+        self.ws.column_dimensions['F'].width = 15
+        self.ws.column_dimensions['G'].width = 15
+        self.ws.column_dimensions['H'].width = 15
+        self.ws.column_dimensions['I'].width = 15
+        self.ws.column_dimensions['J'].width = 15
+        self.ws.column_dimensions['K'].width = 15
+        
+    def set_line_height(self):
+        self.ws.row_dimensions[1].height = 20
+        self.ws.row_dimensions[2].height = 20
+        self.ws.row_dimensions[3].height = 30
+        self.ws.row_dimensions[4].height = 24
+        self.ws.row_dimensions[5].height = 21
+        self.ws.row_dimensions[6].height = 15
+        self.ws.row_dimensions[7].height = 21
+        self.ws.row_dimensions[8].height = 20
+        self.ws.row_dimensions[9].height = 15
+        self.ws.row_dimensions[10].height = 20
+        
     def write_start(self):
         cell_date_b = self.ws.cell(1, 1)
         cell_start_b = self.ws.cell(2, 1)
@@ -27,7 +64,7 @@ class InitSheet:
         cell_date_b.font = font_style
         cell_start_b.font = font_style
         cell_sold_st.font = font_style
-        cell_date_txt.font = font_style
+        cell_date_txt.font = Font(size=13, bold=True)
         
         cell_sold_st.number_format = FORMAT_COMPTA
         
@@ -92,17 +129,6 @@ class InitSheet:
         cell_title_re.value = CET.INIT_TITLE_REAL
         cell_val_ex.value = '=B2+B8-F8'
 
-    def set_big_border(self):
-        for col in range(1, 11):
-            cell = ws.cell(row=10, column=col)
-            cell.border =  Border(bottom=Side(border_style='dotted', color='000000'))
-        for row in range(1, 10):
-            cell = ws.cell(row=row, column=11)
-            cell.border =  Border(right=Side(border_style='dotted', color='000000'))
-        
-        cell = ws.cell(row=10, column=11)
-        cell.border =  Border(bottom=Side(border_style='dotted', color='000000'),right=Side(border_style='dotted', color='000000'))
-        
     def write_income(self):
         cell_title_b = self.ws.cell(7,1)
         cell_title_tot = self.ws.cell(8,1)
@@ -314,23 +340,16 @@ class InitSheet:
 
     def set_protection(self):
         # protect all the sheet
-        for row in self.ws.iter_rows():
-            for cell in row:
-                cell.protection = protect_ws(locked=True)
+        protect_ws(self.ws)
         
         # unprotect certain part
         cell_val_ex = self.ws.cell(8,2)
-        cell_val_re = self.ws.cell(8,3)
         unprotect_cell(cell_val_ex)
-        unprotect_cell(cell_val_re)
         cell_val_ex = self.ws.cell(8,6)
-        cell_val_re = self.ws.cell(8,7)
         unprotect_cell(cell_val_ex)
-        unprotect_cell(cell_val_re)
         
-        unprotect_range(self.ws,11,25,1,7)
-        unprotect_range(self.ws,7,25,8,11)
-        unprotect_range(self.ws,1,100,12,25)
+        unprotect_range(self.ws,11,25,1,11)
+        unprotect_range(self.ws,1,100,12,100)
     
 if __name__ == "__main__":
     import openpyxl

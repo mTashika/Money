@@ -1,8 +1,5 @@
 import Const as C
-from Tools import verif_nan,check_cell_value
-
-# some functions
-
+from Tools import check_cell_value
 
 class DataRealisation():
     def __init__(self,cat1,cat2,name,value):
@@ -20,9 +17,12 @@ class MonthRealisation():
         self.tot = 0
         self.tot_ex = 0
         self.tot_inc = 0
+        self.tot_real = 0
         self.tot_ex_real = 0
         self.tot_inc_real = 0
-        self.tot_real = 0
+        
+        self.sold_st_month_pdf = 0
+        self.tot_sold_real = 0
         
         self.d_realisation = []
         self.extract_data_realisation()
@@ -39,12 +39,13 @@ class MonthRealisation():
                 val = self.ws.cell(row=i, column=self.mks.B_EXT_VALUE_COL).value
                 d = DataRealisation(cat1,cat2,name,val)
                 self.d_realisation.append(d)
+        self.sold_st_month_pdf = self.ws.cell(row=self.mks.B_BILAN_ST_SOLD[0], column=self.mks.B_BILAN_ST_SOLD[1]).value
         
     def update_tot(self):
         for val in self.d_realisation:
             euro = val.value
             ok_real = True if val.cat1 not in C.NOT_REAL_ACTION else False
-            if isinstance(euro,(int,float)) and verif_nan(euro):
+            if isinstance(euro,(int,float)) and (check_cell_value(euro)==1 or check_cell_value(euro)==2):
                 self.tot+=euro
                 if ok_real:
                     self.tot_real+=euro
@@ -55,12 +56,13 @@ class MonthRealisation():
                 else:
                     self.tot_ex+=euro
                     if ok_real:
-                        self.tot_ex_real+=euro 
+                        self.tot_ex_real+=euro
+        self.tot_sold_real = self.sold_st_month_pdf + self.tot_real
         
     def create_cats1(self):
         dic_cats1 = {}
         for d_real in self.d_realisation:
-            if verif_nan(d_real.cat1):
+            if d_real.cat1 is not None:
                 if d_real.cat1 not in dic_cats1:
                     dic_cats1[d_real.cat1] = [d_real]
                 else:
@@ -117,7 +119,7 @@ class Cat1():
     def create_cats2(self):
         dic_cats2 = {}
         for data in self.data:
-            if verif_nan(data.cat2):
+            if data.cat2 is not None:
                 if data.cat2 not in dic_cats2:
                     dic_cats2[data.cat2] = [data]
                 else:
