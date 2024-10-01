@@ -2,6 +2,7 @@ import unicodedata
 from openpyxl.utils import range_boundaries,get_column_letter
 from datetime import datetime
 
+
 def check_cell_value(cell_value):
     if cell_value is None:
         return -1
@@ -11,7 +12,7 @@ def check_cell_value(cell_value):
         return 1
     if isinstance(cell_value, float):
         return 2
-    
+
 def clear_zone(ws,minrow,maxrow,mincol,maxcol):        
         mcr_coord_list = [mcr.coord for mcr in ws.merged_cells.ranges]
         for mcr in mcr_coord_list:

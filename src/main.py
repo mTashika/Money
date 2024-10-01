@@ -14,16 +14,22 @@ from Const import TOOL_SHEET_NAME
 from Validation import Valid
 import threading
 from PIL import Image, ImageTk
+import sys
 
 
 
 GREY = "#999999"
 WHITE = "white"
+def ressource_path(rel_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path,rel_path)
+        
 class App(ctk.CTk):
     def __init__(self):
-        self.main_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.asset_dir = os.path.join(self.main_folder , 'asset')
-        
+        self.asset_path = ressource_path('asset')        
         self.wb, self.ws = None, None
         self.excel_file_path = None
         self.year, self.month = None, None
@@ -109,7 +115,7 @@ class App(ctk.CTk):
         self.checkbox_update.place(relx=0.905,rely=0.07,anchor='ne')
         self.on_checkbox_toggle(self.checkbox_create_var)
         
-        icon_photo = PhotoImage(file=os.path.join(self.asset_dir, 'folder.png'))  # Remplacez par le chemin de votre image
+        icon_photo = PhotoImage(file=os.path.join(self.asset_path,'folder.png'))
         icon_photo = icon_photo.subsample(2)  # Diviser par 2, ajustez selon vos besoins
         self.button_free = ctk.CTkButton(self, text="", command=self.free_year_wb,image=icon_photo,width=50,height=40)
         self.button_free.place(relx=0.03,rely=0.03,anchor='nw')
@@ -122,7 +128,7 @@ class App(ctk.CTk):
         self.button_cancel.pack(side="left", padx=10, pady=10)
         
         # GIF
-        self.gif = Image.open(os.path.join(self.asset_dir, 'loading_gif.gif'))
+        self.gif = Image.open(os.path.join(self.asset_path,'loading_gif.gif'))
         self.init_gif()
         self.loading_label = ctk.CTkLabel(frame_loading,text='')
         
