@@ -5,10 +5,10 @@ def set_protection(ws,mks):
     protect_ws(ws)
     
     # unprotect certain part
-    cell_val_ex = ws.cell(mks.B_IN_TOT_EX[0],mks.B_IN_TOT_EX[1])
-    unprotect_cell(cell_val_ex)
-    cell_val_ex = ws.cell(mks.B_LOS_TOT_EX[0],mks.B_LOS_TOT_EX[1])
-    unprotect_cell(cell_val_ex)
+    cell_val_ex_in = ws.cell(mks.B_IN_TOT_EX[0],mks.B_IN_TOT_EX[1])
+    unprotect_cell(cell_val_ex_in)
+    cell_val_ex_los = ws.cell(mks.B_LOS_TOT_EX[0],mks.B_LOS_TOT_EX[1])
+    unprotect_cell(cell_val_ex_los)
     
     unprotect_range(ws,mks.B_IN_ST_LINE,mks.B_DETAIL_LINE_ST-2,mks.B_IN_NAME_COL,mks.B_REAL_COL_ED)
     unprotect_range(ws,mks.B_LOS_ST_LINE,mks.B_DETAIL_LINE_ST-2,mks.B_LOS_NAME_COL,mks.B_REAL_COL_ED)
@@ -36,3 +36,5 @@ def unprotect_range(ws, min_row, max_row, min_col, max_col):
     
 def unprotect_cell(cell):
     cell.protection = cell.protection.copy(locked=False)
+def protect_cell(cell):
+    cell.protection = cell.protection.copy(locked=True)

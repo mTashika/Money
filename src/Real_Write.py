@@ -5,8 +5,6 @@ from openpyxl.styles import Side, Border,Alignment
 from Tools import clear_zone,generate_table,unmerge_cells_by_coords,check_cell_value
 from Protection import unprotect_range
 from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.datavalidation import DataValidation
-
 
 class IncomeLoss():
     def __init__(self,name,ex,re):
@@ -20,26 +18,48 @@ class WriteRealisation():
         self.mks = mks
         self.realisation = realisation
         self.money_type = '€'
+        self.in_list = []
+        self.los_list = []
+        self.get_income_loss()
         self.clear_real()
         self.print_real_income()
         self.print_real_loss()
+        self.detail_merge()
         self.print_real_bilan()
         self.print_tot()
         self.print_cat()
-        self.set_cells_format_extraction()
+        self.set_protection()
 
+    def get_income_loss(self):
+        # Income
+        for row in range(self.mks.B_IN_ST_LINE,self.mks.B_DETAIL_LINE_ST-1):
+            name = self.ws.cell(row=row,column=self.mks.B_IN_NAME_COL).value
+            ex = self.ws.cell(row=row,column=self.mks.B_IN_EX_COL).value
+            re = self.ws.cell(row=row,column=self.mks.B_IN_RE_COL).value
+            if check_cell_value(name)==0 and (check_cell_value(ex) in [1,2] or check_cell_value(re) in [1,2]):
+                inc = IncomeLoss(name,ex,None)
+                self.in_list.append(inc)
+        # Loss
+        for row in range(self.mks.B_LOS_ST_LINE,self.mks.B_DETAIL_LINE_ST-1):
+            name = self.ws.cell(row=row,column=self.mks.B_LOS_NAME_COL).value
+            ex = self.ws.cell(row=row,column=self.mks.B_LOS_EX_COL).value
+            re = self.ws.cell(row=row,column=self.mks.B_LOS_RE_COL).value
+            if check_cell_value(name)==0 and (check_cell_value(ex) in [1,2] or check_cell_value(re) in [1,2]):
+                los = IncomeLoss(name,ex,None)
+                self.los_list.append(los)
         
     def clear_real(self):
+        clear_zone(self.ws,self.mks.B_IN_ST_LINE,self.mks.B_DETAIL_LINE_ST-2,self.mks.B_IN_NAME_COL,self.mks.B_IN_RE_COL)
+        clear_zone(self.ws,self.mks.B_LOS_ST_LINE,self.mks.B_DETAIL_LINE_ST-2,self.mks.B_LOS_NAME_COL,self.mks.B_LOS_RE_COL)
         clear_zone(self.ws,self.mks.B_DETAIL_LINE_ST,self.ws.max_row+1,self.mks.B_REAL_COL_ST,self.mks.B_REAL_COL_ED)
-        for row in range(self.mks.B_IN_ST_LINE,self.mks.B_in_ed_line+1):
-            self.ws.cell(row,self.mks.B_IN_RE_COL).value = None
-            if self.ws.cell(row,self.mks.B_IN_EX_COL).value is None:
-                self.ws.cell(row,self.mks.B_IN_NAME_COL).value = None
-        for row in range(self.mks.B_LOS_ST_LINE,self.mks.B_los_ed_line+1):
-            self.ws.cell(row,self.mks.B_LOS_RE_COL).value = None
-            if self.ws.cell(row,self.mks.B_LOS_EX_COL).value is None:
-                self.ws.cell(row,self.mks.B_LOS_NAME_COL).value = None
-    
+        unmerge_cells_by_coords(self.ws,self.mks.B_DETAIL_LINE_ST-1,self.mks.B_ID_C1_COL,self.mks.B_DETAIL_LINE_ST-1,self.mks.B_REAL_COL_ED)
+        while ((self.mks.B_DETAIL_LINE_ST > (self.mks.B_IN_ST_LINE + REAL_SPACE_INC_LOSS_2_DETAIL + 2)) and 
+                (self.mks.B_DETAIL_LINE_ST > (self.mks.B_LOS_ST_LINE + REAL_SPACE_INC_LOSS_2_DETAIL + 2))):
+            self.ws.delete_rows(self.mks.B_IN_ST_LINE+1)
+            self.mks.B_DETAIL_LINE_ST-=1
+        self.mks.B_in_ed_line = self.mks.B_IN_ST_LINE
+        self.mks.B_los_ed_line = self.mks.B_LOS_ST_LINE
+            
     def print_tot(self):
         # total name
         r1 = self.mks.B_DETAIL_LINE_ST
@@ -148,23 +168,23 @@ class WriteRealisation():
         for cat1 in self.realisation.cats1:
             if cat1.tot>0:
                 f_ok = False
-                for row in range(self.mks.B_IN_ST_LINE,self.mks.B_in_ed_line+1):
-                    if check_cell_value(self.ws.cell(row,self.mks.B_IN_NAME_COL).value)!=0:# cellule bizarre
-                        self.ws.cell(row,self.mks.B_IN_NAME_COL).value = cat1.name
-                        self.ws.cell(row,self.mks.B_IN_RE_COL).value = cat1.tot
-                        self.ws.cell(row,self.mks.B_IN_EX_COL).value = None
+                for income in self.in_list:
+                    if income.name == cat1.name:
+                        income.re = cat1.tot
                         f_ok = True
                         break
-                    if self.ws.cell(row,self.mks.B_IN_NAME_COL).value == cat1.name:# categorie trouvée
-                        self.ws.cell(row,self.mks.B_IN_RE_COL).value = cat1.tot
-                        f_ok = True
-                        break
-                if not f_ok:# on ajoute en dessous
-                    while (self.mks.B_DETAIL_LINE_ST) <= (self.mks.B_in_ed_line + REAL_SPACE_INC_LOSS_2_DETAIL + 2):
-                        self.extend_income_loss('in')
-                    self.mks.B_in_ed_line+=1
-                    self.ws.cell(self.mks.B_in_ed_line,self.mks.B_IN_RE_COL).value = cat1.tot
-                    self.ws.cell(self.mks.B_in_ed_line,self.mks.B_IN_NAME_COL).value = cat1.name
+                if not f_ok:
+                    self.in_list.append(IncomeLoss(cat1.name,None,cat1.tot))
+                    
+        for income in self.in_list:
+            if check_cell_value(income.name)==0 and(check_cell_value(income.ex) in [1,2] or check_cell_value(income.re) in [1,2]):
+                while (self.mks.B_DETAIL_LINE_ST <= (self.mks.B_in_ed_line + REAL_SPACE_INC_LOSS_2_DETAIL + 1)):
+                    self.ws.insert_rows(self.mks.B_in_ed_line+1)
+                    self.mks.B_DETAIL_LINE_ST+=1
+                self.ws.cell(self.mks.B_in_ed_line,self.mks.B_IN_NAME_COL).value = income.name
+                self.ws.cell(self.mks.B_in_ed_line,self.mks.B_IN_RE_COL).value = income.re
+                self.ws.cell(self.mks.B_in_ed_line,self.mks.B_IN_EX_COL).value = income.ex
+                self.mks.B_in_ed_line+=1
         self.maj_formule_income()
     
     def maj_formule_income(self):
@@ -175,26 +195,32 @@ class WriteRealisation():
         for cat1 in self.realisation.cats1:
             if cat1.tot<0:
                 f_ok = False
-                for row in range(self.mks.B_LOS_ST_LINE,self.mks.B_los_ed_line+1):
-                    if check_cell_value(self.ws.cell(row,self.mks.B_LOS_NAME_COL).value)!=0:# cellule bizarre
-                        self.ws.cell(row,self.mks.B_LOS_NAME_COL).value = cat1.name
-                        self.ws.cell(row,self.mks.B_LOS_RE_COL).value = cat1.tot
-                        self.ws.cell(row,self.mks.B_LOS_EX_COL).value = None
-                    if self.ws.cell(row,self.mks.B_LOS_NAME_COL).value == cat1.name:# categorie trouvée
-                        self.ws.cell(row,self.mks.B_LOS_RE_COL).value = cat1.tot
+                for loss in self.los_list:
+                    if loss.name == cat1.name:
+                        loss.re = cat1.tot
                         f_ok = True
                         break
-                if not f_ok:# on ajoute en dessous
-                    if self.mks.B_DETAIL_LINE_ST <= (self.mks.B_los_ed_line + REAL_SPACE_INC_LOSS_2_DETAIL + 2):
-                        self.extend_income_loss('loss')
-                    self.mks.B_los_ed_line+=1
-                    self.ws.cell(self.mks.B_los_ed_line,self.mks.B_LOS_RE_COL).value = cat1.tot
-                    self.ws.cell(self.mks.B_los_ed_line,self.mks.B_LOS_NAME_COL).value = cat1.name
-        self.maj_formule_loss()
+                if not f_ok:
+                    self.los_list.append(IncomeLoss(cat1.name,None,cat1.tot))
         
+        for loss in self.los_list:
+            if check_cell_value(loss.name)==0 and(check_cell_value(loss.ex) in [1,2] or check_cell_value(loss.re) in [1,2]):
+                while (self.mks.B_DETAIL_LINE_ST <= (self.mks.B_los_ed_line + REAL_SPACE_INC_LOSS_2_DETAIL + 1)):
+                    self.ws.insert_rows(self.mks.B_los_ed_line+1)
+                    self.mks.B_DETAIL_LINE_ST+=1
+                self.ws.cell(self.mks.B_los_ed_line,self.mks.B_LOS_NAME_COL).value = loss.name
+                self.ws.cell(self.mks.B_los_ed_line,self.mks.B_LOS_RE_COL).value = loss.re
+                self.ws.cell(self.mks.B_los_ed_line,self.mks.B_LOS_EX_COL).value = loss.ex
+                self.mks.B_los_ed_line+=1
+        self.maj_formule_loss()
+
     def maj_formule_loss(self):
         self.ws.cell(self.mks.B_LOS_TOT_EX[0],self.mks.B_LOS_TOT_EX[1]).value = f'=SUM({get_column_letter(self.mks.B_LOS_EX_COL)}{self.mks.B_LOS_ST_LINE}:{get_column_letter(self.mks.B_LOS_EX_COL)}{self.mks.B_los_ed_line})'
         self.ws.cell(self.mks.B_LOS_TOT_REAL[0],self.mks.B_LOS_TOT_REAL[1]).value = f'=SUM({get_column_letter(self.mks.B_LOS_RE_COL)}{self.mks.B_LOS_ST_LINE}:{get_column_letter(self.mks.B_LOS_RE_COL)}{self.mks.B_los_ed_line})'
+    
+    def detail_merge(self):
+        self.ws.merge_cells(start_row=self.mks.B_DETAIL_LINE_ST-1, start_column=self.mks.B_ID_C1_COL,
+                            end_row=self.mks.B_DETAIL_LINE_ST-1, end_column=self.mks.B_REAL_COL_ED)
         
     def extend_income_loss(self,type):
         #unmerge detail
@@ -207,19 +233,10 @@ class WriteRealisation():
         # merge detail
         self.ws.merge_cells(start_row=self.mks.B_DETAIL_LINE_ST-1, start_column=self.mks.B_ID_C1_COL,
                             end_row=self.mks.B_DETAIL_LINE_ST-1, end_column=self.mks.B_REAL_COL_ED)
-        
-        # unprotect one line
-        unprotect_range(self.ws,self.mks.B_DETAIL_LINE_ST-1,self.mks.B_DETAIL_LINE_ST-1,self.mks.B_ID_C1_COL,self.mks.B_REAL_COL_ED)
-    
-    def print_real_bilan(self):
-        self.ws.cell(self.mks.B_BILAN_ED_SOLDRE[0],self.mks.B_BILAN_ED_SOLDRE[1]).value = self.realisation.tot_sold_real
 
-    def set_cells_format_extraction(self):
-        dv1 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$A:$A")
-        dv2 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$B:$B")
-        self.ws.add_data_validation(dv2)
-        self.ws.add_data_validation(dv1)
-        for row in range(self.mks.B_DETAIL_LINE_ST,self.mks.B_ext_ed_line+1):
-            # Data validation
-            dv1.add(self.ws.cell(row=row,column=self.mks.B_ID_C1_COL))
-            dv2.add(self.ws.cell(row=row,column=self.mks.B_ID_C2_COL))
+    def print_real_bilan(self):
+        self.ws.cell(self.mks.B_BILAN_ED_SOLDRE[0],self.mks.B_BILAN_ED_SOLDRE[1]).value = f'={get_column_letter(self.mks.B_IN_TOT_REAL[1])}{self.mks.B_IN_TOT_REAL[0]}+{get_column_letter(self.mks.B_LOS_TOT_REAL[1])}{self.mks.B_LOS_TOT_REAL[0]}+{get_column_letter(self.mks.B_BILAN_ST_SOLD[1])}{self.mks.B_BILAN_ST_SOLD[0]}'
+
+    def set_protection(self):
+        unprotect_range(self.ws,self.mks.B_IN_ST_LINE,self.mks.B_DETAIL_LINE_ST-2,self.mks.B_IN_NAME_COL,self.mks.B_REAL_COL_ED)
+        unprotect_range(self.ws,self.mks.B_LOS_ST_LINE,self.mks.B_DETAIL_LINE_ST-2,self.mks.B_LOS_NAME_COL,self.mks.B_REAL_COL_ED)

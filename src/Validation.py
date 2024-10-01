@@ -1,32 +1,29 @@
 from Tools import check_cell_value
-from Const import EXT_BILAN_TXT_VALID
+from Const import EXT_BILAN_TXT_VALID,VALD_TOT_POUR_ERROR,VALD_TOT_SEUIL_ERROR
 from openpyxl.styles import Alignment
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill,Font
+from openpyxl.formatting.rule import CellIsRule
 
 class Valid():
     def __init__(self,ws,mks):
-        real_income = 0
-        real_loss = 0
-        for row in range(mks.B_IN_ST_LINE,mks.B_in_ed_line+1):
-            val = ws.cell(row=row,column=mks.B_IN_RE_COL).value
-            if val is not None:
-                real_income += val
-        for row in range(mks.B_LOS_ST_LINE,mks.B_los_ed_line+1):
-            val = ws.cell(row=row,column=mks.B_LOS_RE_COL).value
-            if val is not None:
-                real_loss += val
-            
-        sold_start = ws.cell(row=mks.B_BILAN_ST_SOLD[0],column=mks.B_BILAN_ST_SOLD[1]).value
-        sold_end = ws.cell(row=mks.B_BILAN_ED_SOLDRE[0],column=mks.B_BILAN_ED_SOLDRE[1]).value
-        cell_val = ws.cell(row=mks.B_BILAN_ED_VAL[0],column=mks.B_BILAN_ED_VAL[1])
-        if round(sold_start + real_income + real_loss,0) == round(sold_end,0):
-            cell_val.style = 'Good'
-        elif (not ws.cell(row=mks.b_ext_verif[0],column=mks.b_ext_verif[1]).value or 
-            check_cell_value(real_loss) not in [1,2] or
-            check_cell_value(real_income) not in [1,2]):
-            cell_val.style = 'Neutral'
+        val_extraction_value = ws.cell(row=mks.b_ext_verif[0],column=mks.b_ext_verif[1]).value
+        sold_re = ws.cell(row=mks.B_BILAN_ED_SOLDRE[0],column=mks.B_BILAN_ED_SOLDRE[1]).value
+        cell_val_tot = ws.cell(row=mks.B_BILAN_ED_VAL[0],column=mks.B_BILAN_ED_VAL[1])
+        
+        if (not val_extraction_value or check_cell_value(sold_re) not in [1,2]):
+            cell_val_tot.style = 'Neutral'
         else:
-            cell_val.style = 'Bad'
+            cell_soldex = get_column_letter(mks.B_BILAN_ED_SOLDEX[1]) + str(mks.B_BILAN_ED_SOLDEX[0])
+            cell_soldre = get_column_letter(mks.B_BILAN_ED_SOLDRE[1]) + str(mks.B_BILAN_ED_SOLDRE[0])
+            abs_difference = f'ABS({cell_soldex} - {cell_soldre})'
+            max_value = f'MAX(ABS({cell_soldex}), ABS({cell_soldre})) * {VALD_TOT_POUR_ERROR}'
+
+            cell_val_tot.value = f'={abs_difference} <= MAX({VALD_TOT_SEUIL_ERROR}, {max_value})'
             
-        cell_val.number_format  = f';;;"{EXT_BILAN_TXT_VALID}"'
-        cell_val.alignment=Alignment(horizontal='center', vertical='center')
-    
+        cell_val_tot.number_format  = f';;;"{EXT_BILAN_TXT_VALID}"'
+        cell_val_tot.alignment=Alignment(horizontal='center', vertical='center')
+        rule_good = CellIsRule(operator='equal', formula=[True], stopIfTrue=True, fill=PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid"),font = Font(color="006100"))
+        rule_bad = CellIsRule(operator='equal', formula=[False], stopIfTrue=True, fill=PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid"),font = Font(color="9C0006"))
+        ws.conditional_formatting.add(f'{get_column_letter(mks.B_BILAN_ED_VAL[1])}{mks.B_BILAN_ED_VAL[0]}', rule_good)
+        ws.conditional_formatting.add(f'{get_column_letter(mks.B_BILAN_ED_VAL[1])}{mks.B_BILAN_ED_VAL[0]}', rule_bad)

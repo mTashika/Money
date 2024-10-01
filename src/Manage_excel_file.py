@@ -92,11 +92,14 @@ class ManageExcelFile:
         if self.wb_valid and self.ws_valid:
             try:
                 self.wb.save(self.file_path)
+                return 1
             except PermissionError:
                 messagebox.showerror('Error','Permission denied\nTry to close the excel first')
                 print('Workbook not saved')
+                return -1
             except FileNotFoundError:
                 messagebox.showerror("Error", "Invalid Excel Path !")
                 print('Workbook not saved')
+                return -1
         else:
             print('Workbook not saved')

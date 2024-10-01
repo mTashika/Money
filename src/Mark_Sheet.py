@@ -57,8 +57,7 @@ class SheetMarker():
                 elif cell_value == BE.BILAN_ED_SOLD:
                     self.B_BILAN_ED_SOLDEX = [row+1,col+1]
                     self.B_BILAN_ED_SOLDRE = [row+1,col+2]
-                elif cell_value == BE.BILAN_ED_VAL:
-                    self.B_BILAN_ED_VAL = [row,col]
+                    self.B_BILAN_ED_VAL = [row-1,col+3]
                 elif cell_value == BE.INCOME:
                     self.B_IN_NAME_COL = col
                     self.B_IN_EX_COL = col+1
@@ -89,6 +88,7 @@ class SheetMarker():
                 elif cell_value == BE.EXT_VAL:
                     self.b_ext_sold_ed_est = [row,col+1]
                     self.b_ext_verif = [row,col+2]
+                    
                 # print(f"Valeur à la ligne {row}, colonne {col} : {cell_value}")
                 
         for row in range(self.B_IN_ST_LINE, self.B_DETAIL_LINE_ST):

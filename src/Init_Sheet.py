@@ -86,6 +86,7 @@ class InitSheet:
         cell_val_ex   = self.ws.cell(5,2)
         cell_val_re   = self.ws.cell(5,3)
         cell_valid_b  = self.ws.cell(3,4)
+        cell_valid_note  = self.ws.cell(2,4)
         
         cell_title_b.font = Font(size=16, bold=True)
         cell_title_ex.font = Font(size=16, bold=True)
@@ -93,6 +94,7 @@ class InitSheet:
         cell_val_ex.font = Font(size=14)
         cell_val_re.font = Font(size=14)
         cell_valid_b.font = Font(size=14)
+        cell_valid_note.font = Font(size=9, color="FFFFFF")
         
         cell_title_b.alignment = Alignment(horizontal='center', vertical='center')
         cell_title_ex.alignment = Alignment(horizontal='center', vertical='center')
@@ -100,6 +102,7 @@ class InitSheet:
         cell_val_ex.alignment = Alignment(horizontal='right', vertical='center')
         cell_val_re.alignment = Alignment(horizontal='right', vertical='center')
         cell_valid_b.alignment = Alignment(horizontal='center', vertical='center')
+        cell_valid_note.alignment = Alignment(horizontal='left', vertical='center')
         
         cell_val_ex.number_format = FORMAT_COMPTA
         cell_val_re.number_format = FORMAT_COMPTA
@@ -122,12 +125,14 @@ class InitSheet:
         
         cell_title_b.value = CEB.BILAN_ED_SOLD
         cell_title_b.number_format = f';;;"{CET.INIT_TITLE_BILAN}"'
-        cell_valid_b.value = CEB.BILAN_ED_VAL
+        cell_valid_b.value = ""
         cell_valid_b.number_format = f';;;"{CET.INIT_VALID}"'
+        cell_valid_note.value = CET.INIT_VALID_TOT_NOTE
+        
         
         cell_title_ex.value = CET.INIT_TITLE_EXPECTED
         cell_title_re.value = CET.INIT_TITLE_REAL
-        cell_val_ex.value = '=B2+B8-F8'
+        cell_val_ex.value = '=B2+B8+F8'
 
     def write_income(self):
         cell_title_b = self.ws.cell(7,1)
@@ -176,6 +181,7 @@ class InitSheet:
 
         self.ws.merge_cells(start_row=7, start_column=1, end_row=7, end_column=3)
         
+        cell_val_ex.value = "=SUM(B11:B25)"
         cell_title_b.value = CEB.INCOME
         cell_title_b.number_format = f';;;"{CET.INIT_TITLE_IN}"'
         cell_title_tot.value = CET.INIT_TITLE_TOT
@@ -230,6 +236,7 @@ class InitSheet:
 
         self.ws.merge_cells(start_row=7, start_column=5, end_row=7, end_column=7)
         
+        cell_val_ex.value = "=SUM(F11:F25)"
         cell_title_b.value = CEB.LOSS
         cell_title_b.number_format = f';;;"{CET.INIT_TITLE_LOS}"'
         cell_title_tot.value = CET.INIT_TITLE_TOT
@@ -239,10 +246,14 @@ class InitSheet:
 
     def write_detail(self):
         cell_detail_b = self.ws.cell(26,1)
+        cell_est_sold = self.ws.cell(28,1)
 
         cell_detail_b.font = Font(size=11)
+        cell_est_sold.font = Font(size=11)
+        
         cell_detail_b.style = "Accent1"
         cell_detail_b.alignment = Alignment(horizontal='center', vertical='center')
+        cell_est_sold.alignment = Alignment(horizontal='center', vertical='center')
 
         # cell_detail_b.fill = PatternFill(start_color='F7C7AC', end_color='F7C7AC', fill_type='solid')
 
@@ -252,6 +263,7 @@ class InitSheet:
         
         cell_detail_b.value = CEB.DETAIL
         cell_detail_b.number_format = f';;;"{CET.INIT_DETAIL}"'
+        cell_est_sold.value = CEB.EXT_VAL
 
     def write_validity(self):
         cell_title_b       = self.ws.cell(1,8)

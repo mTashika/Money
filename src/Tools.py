@@ -1,7 +1,30 @@
 import unicodedata
 from openpyxl.utils import range_boundaries,get_column_letter
 from datetime import datetime
+from openpyxl.worksheet.datavalidation import DataValidation
+import Const as C
+from Const_Balise_Excel import DETAIL,EXT_VAL
 
+
+def set_all_data_validation(wb):
+    f_ok = False
+    for ws in wb.worksheets:
+        if ws.title != C.TOOL_SHEET_NAME:
+            dv1 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$A:$A")
+            dv2 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$B:$B")
+            ws.add_data_validation(dv1)
+            ws.add_data_validation(dv2)
+            for row in range(1, ws.max_row + 1):
+                cell_value = ws.cell(row=row, column=1).value
+                if cell_value == DETAIL:
+                    f_ok = True
+                    continue
+                elif cell_value == EXT_VAL:
+                    f_ok = False
+                    break
+                if f_ok:
+                    dv1.add(ws.cell(row=row,column=1))
+                    dv2.add(ws.cell(row=row,column=2))
 
 def check_cell_value(cell_value):
     if cell_value is None:
@@ -63,6 +86,12 @@ def get_current_month():
     return datetime.now().strftime("%B")
 def get_current_year():
     return datetime.now().strftime("%Y")
+
+def custom_sort_fincancial_operation(fo):
+    # On renvoie un tuple : le premier élément détermine l'ordre (positif ou négatif),
+    # le second élément est la valeur elle-même pour le tri interne
+    value = fo.value
+    return (1 if value < 0 else 0, -value if value >= 0 else value)
 
 class FinancialOperation:
     '''

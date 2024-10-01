@@ -3,6 +3,7 @@ import pdfplumber
 from Ext_LPB_2024 import ExtractionLbp2024
 from tkinter import messagebox
 from Const import EXT_VALID_ERR_UNIT
+from Tools import custom_sort_fincancial_operation
 
 class PDFExtraction():
     def __init__(self,file_path):
@@ -16,6 +17,7 @@ class PDFExtraction():
         self.read_pdf()
         self.extract()
         self.add_and_cut()
+        self.sort()
         self.lenght = len(self.financial_operations)
         self.validation_extraction()
         
@@ -45,7 +47,9 @@ class PDFExtraction():
                 if op.num != opp.num and op.name == opp.name:
                     op.value = round(op.value + opp.value,3)
                     self.financial_operations.remove(opp)
-            
+        
+    def sort(self):
+        self.financial_operations = sorted(self.financial_operations, key=custom_sort_fincancial_operation)
     def validation_extraction(self):
         self.sold_est = self.sold_st + self.tot_op
         self.sold_diff = self.sold_est-self.sold_ed

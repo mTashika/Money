@@ -1,7 +1,6 @@
 BILAN_DATE = "~"
 BILAN_ST_SOLD = "&"
-BILAN_ED_SOLD = "<>"
-BILAN_ED_VAL = "><"
+BILAN_ED_SOLD = "@"
 INCOME = "+"
 LOSS = "-"
 DETAIL = "<"

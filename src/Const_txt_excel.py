@@ -23,3 +23,4 @@ INIT_TITLE_IDENTIFICATION = 'Identification'
 INIT_TITLE_REALISATION = 'Realisation'
 INIT_TITLE_PATH = 'Path'
 INIT_TITLE_DATE= 'Date'
+INIT_VALID_TOT_NOTE = "Valid if the difference <50€ [for small amout] or <10% of the max [for large amout]"

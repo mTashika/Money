@@ -73,7 +73,6 @@ class MonthRealisation():
     
     def sort_cats1(self):
         self.cats1 = sorted(self.cats1, key=lambda cat: (cat.tot < 0, cat.tot))
-        
 
 class Cat1():
     def __init__(self,data,exp_tot,inc_tot):
