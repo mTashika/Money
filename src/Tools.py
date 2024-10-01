@@ -1,5 +1,6 @@
 import unicodedata
 from openpyxl.utils import range_boundaries,get_column_letter
+from datetime import datetime
 
 def check_cell_value(cell_value):
     if cell_value is None:
@@ -32,17 +33,18 @@ def generate_table(t_size, val_max):
     for i in range(t_size):
         table.append((i % val_max)+1)  # Génère un nombre de 1 à x en boucle
     return table
-
+def remove_accent(input_str):
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', input_str)
+        if unicodedata.category(c) != 'Mn'
+    )
+    
 def normalize_string(input_str):
     # Convert to lowercase
     lower_str = input_str.lower()
     # Remove accents
-    normalized_str = ''.join(
-        c for c in unicodedata.normalize('NFD', lower_str)
-        if unicodedata.category(c) != 'Mn'
-    )
+    normalized_str = remove_accent(lower_str)
     return normalized_str
-
 
 def center_window(win, width, height):
         # Obtenir la taille de l'écran
@@ -56,6 +58,11 @@ def center_window(win, width, height):
         # Définir la taille et la position de la fenêtre
         win.geometry(f"{width}x{height}+{x}+{y}")
         
+def get_current_month():
+    return datetime.now().strftime("%B")
+def get_current_year():
+    return datetime.now().strftime("%Y")
+
 class FinancialOperation:
     '''
     Classe used for the data extraction from a PDF

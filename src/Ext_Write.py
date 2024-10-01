@@ -59,7 +59,10 @@ class WriteExtraction():
         # validation
         cell_val = self.ws.cell(row=self.mks.b_ext_verif[0],column=self.mks.b_ext_verif[1])
         cell_val.value = self.extraction.validation
-        cell_val.style = "Good"
+        if cell_val.value:
+            cell_val.style = "Good"
+        else:
+            cell_val.style = "Bad"
     
     def write_date(self):
         date = f"{self.extraction.date_st} -> {self.extraction.date_ed}"       

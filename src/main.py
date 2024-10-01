@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import os
 from tkinter import filedialog,messagebox,PhotoImage
-from Tools import center_window,normalize_string
+from Tools import center_window,normalize_string,get_current_month,get_current_year
 from openpyxl import load_workbook
 from Ext_PDF_extraction import PDFExtraction
 from Manage_excel_file import ManageExcelFile
@@ -16,11 +16,14 @@ import threading
 from PIL import Image, ImageTk
 
 
+
 GREY = "#999999"
 WHITE = "white"
-GIF_PATH = "src\loading-gif.gif"
 class App(ctk.CTk):
     def __init__(self):
+        self.main_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.asset_dir = os.path.join(self.main_folder , 'asset')
+        
         self.wb, self.ws = None, None
         self.excel_file_path = None
         self.year, self.month = None, None
@@ -31,17 +34,17 @@ class App(ctk.CTk):
         ctk.set_default_color_theme("blue")  # Thèmes: "blue" (default), "dark-blue", "green"
 
         # Configurer la fenêtre
-        self.title("Gestion des Chemins")
+        self.title("Money")
 
         # Centrer la fenêtre sur l'écran
         center_window(self,800, 550)
 
         # Variables pour stocker les chemins
-        self.pdf_path = ctk.StringVar(value="D:/One Drive/OneDrive/Bureau/R1.pdf; D:/One Drive/OneDrive/Bureau/R2.pdf")
-        self.excel_dir_path = ctk.StringVar(value="D:/.Perso_local/Projects/Project_Money/Test_File")
-        self.year_var = ctk.StringVar(value="2024")
+        self.pdf_path = ctk.StringVar(value="D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240126.pdf; D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240228.pdf; D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240328.pdf; D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240426.pdf; D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240528.pdf; D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240628.pdf; D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240726.pdf; D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240828.pdf; D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Releves/2024/releve_CCP2142397R038_20240927.pdf")
+        self.excel_dir_path = ctk.StringVar(value="D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Fiche")
+        self.year_var = ctk.StringVar(value=get_current_year())
         self.year_var.trace_add("write", self.update_combo_box)
-        self.month_var = ctk.StringVar(value="juin")
+        self.month_var = ctk.StringVar(value=get_current_month())
         self.checkbox_create_var = ctk.BooleanVar()
         self.checkbox_update_var = ctk.BooleanVar()
 
@@ -59,14 +62,14 @@ class App(ctk.CTk):
         
         frame_choice_create = ctk.CTkFrame(frame_choice,fg_color='transparent')
         frame_choice_update = ctk.CTkFrame(frame_choice,fg_color='transparent')
-        frame_choice_create.pack(side='left')
-        frame_choice_update.pack(side='right')
+        frame_choice_create.pack(side='left',anchor='n')
+        frame_choice_update.pack(side='right',anchor='n')
         
         WIDTH = 350
         # frame excel
         self.label_excel_dir = ctk.CTkLabel(frame_excel, text="Chemin du dossier Excel:",font=("Arial", 17))
         self.label_excel_dir.pack(pady=(20, 0), padx=20, anchor='w')
-        self.entry_excel_dir = ctk.CTkEntry(frame_excel, textvariable=self.excel_dir_path, width=WIDTH)
+        self.entry_excel_dir = ctk.CTkEntry(frame_excel, textvariable=self.excel_dir_path, width=475)
         self.entry_excel_dir.pack(pady=10, padx=20, anchor='w')
         self.button_browse_excel_dir = ctk.CTkButton(frame_excel, text="Browse", command=self.browse_excel_dir,
                                                         width=80,height=40,font=("Arial", 17))
@@ -106,7 +109,7 @@ class App(ctk.CTk):
         self.checkbox_update.place(relx=0.905,rely=0.07,anchor='ne')
         self.on_checkbox_toggle(self.checkbox_create_var)
         
-        icon_photo = PhotoImage(file="src/folder.png")  # Remplacez par le chemin de votre image
+        icon_photo = PhotoImage(file=os.path.join(self.asset_dir, 'folder.png'))  # Remplacez par le chemin de votre image
         icon_photo = icon_photo.subsample(2)  # Diviser par 2, ajustez selon vos besoins
         self.button_free = ctk.CTkButton(self, text="", command=self.free_year_wb,image=icon_photo,width=50,height=40)
         self.button_free.place(relx=0.03,rely=0.03,anchor='nw')
@@ -119,9 +122,10 @@ class App(ctk.CTk):
         self.button_cancel.pack(side="left", padx=10, pady=10)
         
         # GIF
-        self.gif = Image.open(GIF_PATH)
+        self.gif = Image.open(os.path.join(self.asset_dir, 'loading_gif.gif'))
         self.init_gif()
         self.loading_label = ctk.CTkLabel(frame_loading,text='')
+        
         
     
     def disable_update(self):
