@@ -5,7 +5,6 @@ from openpyxl.worksheet.datavalidation import DataValidation
 import Const as C
 from Const_Balise_Excel import DETAIL,EXT_VAL
 
-
 def set_all_data_validation(wb):
     f_ok = False
     for ws in wb.worksheets:

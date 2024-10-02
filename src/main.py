@@ -1,6 +1,6 @@
 import customtkinter as ctk
 import os
-from tkinter import filedialog,messagebox,PhotoImage
+from tkinter import filedialog,messagebox,PhotoImage,Entry
 from Tools import center_window,normalize_string,get_current_month,get_current_year,set_all_data_validation
 from openpyxl import load_workbook
 from Ext_PDF_extraction import PDFExtraction
@@ -21,6 +21,7 @@ CHECK_EXTRACT = 2
 CHECK_UPDATE = 3
 GREY = "#999999"
 WHITE = "white"
+
 def ressource_path(rel_path):
     try:
         base_path = sys._MEIPASS
@@ -61,6 +62,8 @@ class App(ctk.CTk):
 
         # Relier la fermeture par la croix à la fonction annuler
         self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.bind("<Button-3>", self.remove_focus)
+        self.bind("<Button-1>", self.remove_focus)
         
         frame_excel = ctk.CTkFrame(self,fg_color='transparent')
         frame_choice = ctk.CTkFrame(self,fg_color='transparent')
@@ -133,7 +136,6 @@ class App(ctk.CTk):
         self.label_month.pack(pady=(20, 0), padx=20, anchor='w')
         
         self.entry_month = ctk.CTkComboBox(frame_choice_update, variable=self.month_var, width=WIDTH,values=[''])
-        self.entry_month.bind("<Button-1>", self.update_combo_box)
         self.entry_month.pack(pady=10, padx=20, anchor='w')
         
         self.checkbox_update = ctk.CTkCheckBox(frame_choice_update, text='', variable=self.checkbox_update_var, onvalue=CHECK_UPDATE, offvalue=0,command=lambda: self.on_checkbox_toggle(self.checkbox_update_var))
@@ -209,14 +211,17 @@ class App(ctk.CTk):
         self.enable_extract()
         self.disable_create()
         self.disable_update()
+        self.update()
     def glob_enable_create(self):
         self.enable_create()
         self.disable_update()
         self.disable_extract()
+        self.update()
     def glob_enable_update(self):
         self.enable_update()
         self.disable_extract()
         self.disable_create()
+        self.update()
 
         
     def disable_excel(self):
@@ -243,7 +248,12 @@ class App(ctk.CTk):
             pass  # Fin du GIF
         self.loading_index = 0  # Initialiser l'index de frame
         self.is_paused = False
-
+    
+    
+    def remove_focus(self,event):
+        if  not isinstance(event.widget,Entry):
+            self.focus_set()
+    
     ########## COMMAND ##########
     def browse_pdf(self):
         file_paths = filedialog.askopenfilenames(title="Sélectionner un fichier PDF", filetypes=[("PDF Files", "*.pdf")])
@@ -298,16 +308,17 @@ class App(ctk.CTk):
     def ok(self):
         if (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == 0 and
                                     self.checkbox_extract_var.get() == CHECK_EXTRACT): # Extraction (Create)
-            threading.Thread(target=self.launch_creation_extraction).start()
             self.show_loading()
+            t = threading.Thread(target=self.launch_creation_extraction).start()
+            t.join()
         elif (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == CHECK_CREATE and
                                     self.checkbox_extract_var.get() == 0): # Create
-            threading.Thread(target=self.launch_creation).start()
             self.show_loading()
+            threading.Thread(target=self.launch_creation).start()
         elif (self.checkbox_update_var.get() == CHECK_UPDATE and self.checkbox_create_var.get() == 0 and
                                     self.checkbox_extract_var.get() == 0): # Update/Realisation
-            threading.Thread(target=self.launch_realisation).start()
             self.show_loading()
+            threading.Thread(target=self.launch_realisation).start()
             
     def launch_creation(self):
         self.is_paused = False
@@ -391,29 +402,30 @@ class App(ctk.CTk):
         self.wb,self.ws = self.managment.get_wb_ws()
 
     def show_loading(self):
+        self.loading_label.pack(padx=10,pady=10)
+        self.loading_label.configure(image= self.frames[self.loading_index])
+        self.update()
+        self.animate_gif()
         self.disable_excel()
         self.disable_update()
         self.disable_extract()
-        self.loading_label.pack(padx=10,pady=10)
-        self.animate_gif()
         
     def hide_loading(self):
-        self.is_paused = True
         self.loading_label.pack_forget()
         self.enable_excel()
-        if self.checkbox_update_var.get():
+        if self.checkbox_update_var.get() == CHECK_UPDATE:
             self.glob_enable_update()
-        else:
+        elif self.checkbox_extract_var.get() == CHECK_EXTRACT:
             self.glob_enable_extract()
             
     def animate_gif(self):
-        if not self.is_paused:
-            frame = self.frames[self.loading_index]  # Obtenir la frame courante
-            self.loading_label.configure(image=frame)  # Mettre à jour l'image du label
-            self.loading_index = (self.loading_index + 1) % len(self.frames)  # Passer à la frame suivante
-
-        # Reprogrammer pour afficher la prochaine frame
-        self.after(75, self.animate_gif)
+            if not self.is_paused:
+                frame = self.frames[self.loading_index]  # Obtenir la frame courante
+                self.loading_label.configure(image=frame)  # Mettre à jour l'image du label
+                self.update()
+                self.loading_index = (self.loading_index + 1) % len(self.frames)  # Passer à la frame suivante
+            # Reprogrammer pour afficher la prochaine frame
+            self.after(75, self.animate_gif)
 
 
 if __name__ == "__main__":
