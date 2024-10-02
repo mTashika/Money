@@ -74,12 +74,12 @@ class App(ctk.CTk):
         frame_loading = ctk.CTkFrame(self,fg_color='transparent',width=0, height=0)
         frame_loading.place(relx=0,rely=1,anchor='sw')
         
-        frame_left = ctk.CTkFrame(frame_choice,fg_color='transparent')
+        frame_left = ctk.CTkFrame(frame_choice)
         frame_choice_extract = ctk.CTkFrame(frame_left,fg_color='transparent')
         frame_choice_create = ctk.CTkFrame(frame_left,fg_color='transparent')
-        frame_choice_update = ctk.CTkFrame(frame_choice,fg_color='transparent')
-        frame_left.pack(side='left',anchor='n')
-        frame_choice_update.pack(side='right',anchor='n')
+        frame_choice_update = ctk.CTkFrame(frame_choice)
+        frame_left.pack(side='left',anchor='center',padx=10)
+        frame_choice_update.pack(side='right',anchor='center',padx=10)
         frame_choice_extract.pack()
         frame_choice_create.pack()
         
@@ -104,7 +104,7 @@ class App(ctk.CTk):
         self.button_browse_pdf.pack(pady=(5,0), padx=20, anchor='e')
         
         self.checkbox_extract = ctk.CTkCheckBox(frame_choice_extract, text='', variable=self.checkbox_extract_var, onvalue=CHECK_EXTRACT, offvalue=0,command=lambda: self.on_checkbox_toggle(self.checkbox_extract_var))
-        self.checkbox_extract.place(relx=0.98,rely=0.12,anchor='ne')
+        self.checkbox_extract.place(relx=0.96,rely=0.12,anchor='ne')
         
         # frame_choice_create
         frame_choice_create_ym = ctk.CTkFrame(frame_choice_create,fg_color='transparent')
@@ -122,11 +122,11 @@ class App(ctk.CTk):
         self.entry_month_create.pack(pady=10, side='left',anchor='n')
         
         self.checkbox_create = ctk.CTkCheckBox(frame_choice_create, text='', variable=self.checkbox_create_var, onvalue=CHECK_CREATE, offvalue=0,command=lambda: self.on_checkbox_toggle(self.checkbox_create_var))
-        self.checkbox_create.place(relx=0.94,rely=0.18,anchor='ne')
+        self.checkbox_create.place(relx=0.93,rely=0.19,anchor='ne')
         
         # frame_choice_update
         self.label_update_title = ctk.CTkLabel(frame_choice_update, text="Update",font=("Arial", 30,'bold'))
-        self.label_update_title.pack(pady=(10, 0), padx=20, anchor='w',fill='both')
+        self.label_update_title.pack(pady=(20, 0), padx=20, anchor='w',fill='both')
         
         self.label_year = ctk.CTkLabel(frame_choice_update, text="Year",font=("Arial", 17,'bold'))
         self.label_year.pack(pady=(20, 0), padx=20, anchor='w')
@@ -135,11 +135,11 @@ class App(ctk.CTk):
         self.label_month = ctk.CTkLabel(frame_choice_update, text="Month",font=("Arial", 17,'bold'))
         self.label_month.pack(pady=(20, 0), padx=20, anchor='w')
         
-        self.entry_month = ctk.CTkComboBox(frame_choice_update, variable=self.month_var, width=WIDTH,values=[''])
-        self.entry_month.pack(pady=10, padx=20, anchor='w')
+        self.entry_month = ctk.CTkComboBox(frame_choice_update, variable=self.month_vr, width=WIDTH,values=[''])
+        self.entry_month.pack(pady=(10,20), padx=20, anchor='w')
         
         self.checkbox_update = ctk.CTkCheckBox(frame_choice_update, text='', variable=self.checkbox_update_var, onvalue=CHECK_UPDATE, offvalue=0,command=lambda: self.on_checkbox_toggle(self.checkbox_update_var))
-        self.checkbox_update.place(relx=0.91,rely=0.07,anchor='ne')
+        self.checkbox_update.place(relx=0.928,rely=0.1,anchor='ne')
         self.on_checkbox_toggle(self.checkbox_extract_var)
         
         icon_photo = PhotoImage(file=os.path.join(self.asset_path,'folder.png'))
