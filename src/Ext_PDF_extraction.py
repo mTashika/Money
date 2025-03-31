@@ -1,36 +1,26 @@
 "Read the PADf and extract information"
-import pdfplumber
 from Ext_LPB_2024 import ExtractionLbp2024
-from tkinter import messagebox
 from Const import EXT_VALID_ERR_UNIT
 from Tools import custom_sort_fincancial_operation
 
 class PDFExtraction():
-    def __init__(self,file_path):
+    def __init__(self,file_path,flg_account=None):
         self.file_path = file_path
+        self.flg_account = flg_account
         self.text = ''
         
         self.financial_operations = None
         self.month,self.year = None,None
         self.sold_st,self.sold_ed = None,None
-        
-        self.read_pdf()
+
         self.extract()
         self.add_and_cut()
         self.sort()
         self.lenght = len(self.financial_operations)
         self.validation_extraction()
-        
-    def read_pdf(self):
-        try:
-            with pdfplumber.open(self.file_path) as pdf:
-                for page in pdf.pages:
-                    self.text += page.extract_text()
-        except FileNotFoundError:
-            messagebox.showerror("Error", "Invalid PDF Path")
             
     def extract(self):
-        self.financial_operations,self.month,self.year,self.sold_st,self.sold_ed,self.date_st,self.date_ed,self.tot_op = ExtractionLbp2024(self.text).get_value()
+        self.financial_operations,self.month,self.year,self.sold_st,self.sold_ed,self.date_st,self.date_ed,self.tot_op = ExtractionLbp2024(self.file_path,self.flg_account).get_value()
     
     def print(self):
         print(f'Date: {self.month} {self.year}')
@@ -59,8 +49,8 @@ class PDFExtraction():
             self.validation = True
 
 if __name__ == '__main__':
-    PATH = r"D:\One Drive\OneDrive\Documents\.Perso\[5] Finance\Compte\Releves\2024\releve_CCP2142397R038_20240126.pdf"
-    extraction = PDFExtraction(PATH)
+    PATH = r"C:/Users/mcast/OneDrive/Bureau/releve_CCP2142397R038_20241227.pdf"
+    extraction = PDFExtraction(PATH,"FR75 2004 1010 0721 4239 7R03 830")
     extraction.print()
 
 

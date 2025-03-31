@@ -1,192 +1,242 @@
-"Fonction et classe d'extraction des données depuis un pdf la banque postal (marche en 2024)"
+import fitz
 import re
-from Tools import FinancialOperation,remove_accent
-import Const as C
+from Tools import FinancialOperation,month_number_to_name
+YTOL = 3
+XMIN = 350
+XENDNEGATIF = 470
+YENDPAGE = 750
+YSTARTPAGE = 160
+XTOTAL = 290
 
-BALISE_CREDIT = ['VIREMENT DE','VIREMENT INSTANTANE DE','CREDIT',"REMISE COMMERCIALE D'AGIOS"]
-BALISE_BUY    = ['ACHAT CB','PRELEVEMENT DE ','COTISATION TRIMESTRIELLE',
-                'VIREMENT INSTANTANE A','VIREMENT POUR','MINIMUM FORFAITAIRE TRIMESTRIEL',
-                'AVANTAGE SEUIL DE NON-PERCEPTION','COMMISSION','RETRAIT']
-BALISE_NONE = ['INTERETS ACQUIS POUR']
-
-BALISE_ST_CCP = 'Compte Courant Postal'
-BALISE_ED_CCP = 'Comptes'
-BUY_VALUE = C.EXT_BUY_VALUE
-CRED_VALUE = C.EXT_CRED_VALUE
-NONE_VALUE = C.EXT_NONE_VALUE
-INTER_LINE = ' --- '
-
-def is_line_transaction_one(line):
-        pattern = r"\b\d{2}/\d{2}\b\s+[A-Z\s]+\s+\d{1,3}(?: \d{3})*,\d{2}"
-        if re.match(pattern, line):
-            return True
-        else:
-            return False
+B_REMOVE_TXT = {"ACHAT CB"}
+B_REMOVE_LINE = {"CARTE NUMERO","CARTE NO"}
+B_TAKE_NAME_NEXT_LINE = {"VIREMENT INSTANTANE","VIREMENT POUR"}
+B_FIRST_LINE_IS_ENOUGH = {"VIREMENT DE","PRELEVEMENT DE","ACHAT CB"}
 
 class ExtractionLbp2024:
-    def __init__(self,text):
-        self.text = text
+    def __init__(self,PATH,flg_account=None):
+        self.path = PATH
+        self.FLAG_ACCOUNT = "Compte Courant Postal" if flg_account is None else flg_account
+        self.tab_lines = []
+        self.ref_start=r'Ancien solde au'
+        self.ref_end=r'Nouveau solde au'
+        self.id_st,self.id_ed = None,None
+        self.Fo_lines = []
+        self.fo_txts = []
+        self.ret_tab = []
         self.financial_operation = []
-        self.init_balise()
-        self.change_text()
-        self.get_matching_lines()
-        self.extract_lpb_2024()
-        self.set_sign()
+        self.month = ""
+        self.year = ""
+        self.sold_st = ""
+        self.sold_ed = ""
+        self.date_st = ""
+        self.date_ed = ""
+        self.tot_op = 0
+
+        self.extract_text_and_positions()
+        self.separate_in_lines()
+        self.find_start_end()
+        self.txt_line_opti = self.tab_lines[self.id_st:self.id_ed+1]
+        self.group_FO()
+        self.get_text_fo_lines()
+        self.get_value_and_description()
+        self.build_FO()
         self.get_date()
         self.get_sold()
-    
-    def init_balise(self):
-        # Balise for the Positive (+) transaction
-        self.B_CREDIT = BALISE_CREDIT
-        # Balise for the negative (-) transaction
-        self.B_BUY = BALISE_BUY
-        self.BALISE_NONE = BALISE_NONE
-        # Balise for the date
-        self.B_DATE = 'Situation de vos comptes\nau '
-        " Balise for the start and end Sold"
-        self.B_SOLD_ST = 'Ancien solde au'
-        self.B_SOLD_ED = 'Nouveau solde au'
-        
-    def change_text(self):
-        self.text = self.text.replace('Ø', "e")
-        self.text = self.text.replace('(cid:201)','E')
-        self.text = remove_accent(self.text)
-        self.text = self.text.replace('ß','u')
-        self.text = self.text.replace('*',' ')
-        self.text = self.text.replace('’', "'")
-    
-    def get_value(self):
-        return self.financial_operation,self.month,self.year,self.sold_st,self.sold_ed,self.date_st,self.date_ed,self.tot_op
-        
-        
-    def get_balise(self,line):
-        'Return the balise name of the line'
-        for balise_buy in self.B_BUY:
-                if balise_buy in line:
-                    return balise_buy
-        for balise_cred in self.B_CREDIT:
-                if balise_cred in line:
-                    return balise_cred
-        for balise_none in self.BALISE_NONE:
-                if balise_none in line:
-                    return balise_none
-        raise Exception(f'Error\nLine: {line}\nLine does not have any balise') # HERE
-    
-    def get_balise_type(self,balise_name):
-        if balise_name in self.B_BUY:
-            return BUY_VALUE
-        elif balise_name in self.B_CREDIT:
-            return CRED_VALUE
-        elif balise_name in self.BALISE_NONE:
-            return NONE_VALUE
-        else:
-            raise Exception('Invalide balise')
-        
-    def get_pattern(self,balise_name,balise_type):
-        'return the pattern for the specifique balise to take the description and the amount'
-        if balise_type == NONE_VALUE:
-            return None,None
-        
-        pattern_date = rf"\d{{2}}\.\d{{2}}\.\d{{2}}"
-        pattern_special_chars = rf'[^\w\s.]'
-        pattern_amount_detection = r'(?<!\d)(?:\d{1,3}(?: \d{3})*|\d+)(?:,\d{2})(?!\d)'
-        pattern_name = rf'{re.escape(balise_name)}\s*([A-Za-z0-9.\s]*?)(?=\s*{pattern_amount_detection}|{pattern_special_chars}|{INTER_LINE}|{pattern_date})'
 
-        pattern_amount = rf'(?<=\s)(\d+(?: \d{{3}})*\,\d{{2}})(?=\s*{re.escape(INTER_LINE)})'
+        del self.tab_lines,self.tab_word_position,self.Fo_lines,self.fo_txts
 
-        if balise_name == 'VIREMENT INSTANTANE DE':
-            pattern_name = rf'{re.escape(INTER_LINE)}\s*([A-Za-z]+\s+[A-Za-z]+)'
-        return pattern_name,pattern_amount
-    
-    def update_description(self,name,balise):
-        'specific case for the description (name)'
-        if balise == 'RETRAIT':
-            name = balise +' '+name
-        if name == '' or name == ' ' or name == '  ':
-            name = balise
-        return name
-    
-    def get_matching_lines(self):
-        lines = self.text.splitlines()
-        self.matching_lines = []
-        f_ccp = False
-        for i in range(len(lines)):
-            if BALISE_ST_CCP in lines[i]:
-                f_ccp = True
-            if BALISE_ED_CCP in lines[i]:
-                f_ccp = False
-            if f_ccp:
-                if re.match(r"^\d{2}/\d{2} ", lines[i]):
-                    l = lines[i]
-                    l+= INTER_LINE
-                    # Ajouter la ligne suivante si elle existe
-                    if i + 1 < len(lines):
-                        if not is_line_transaction_one(lines[i+1]):
-                            l += lines[i+1]
-                    self.matching_lines.append(l)
-        # for l in self.matching_lines:
-        #     print(l)
-    
-    def get_date(self):
-        pattern_date = rf'{re.escape(self.B_DATE)}\s*\d{{2}}\s*([a-zA-Z]+)\s(\d{{4}})'
-        match = re.search(pattern_date,self.text)
-        self.month,self.year = match.group(1),match.group(2)
-        pattern_date_st = rf"{re.escape(self.B_SOLD_ST)}\s(\d{{2}})/(\d{{2}})/\d{{4}}"
-        match_st = re.search(pattern_date_st,self.text)
-        self.date_st = f"{match_st.group(1)}/{match_st.group(2)}"
-        pattern_date_ed = rf"{re.escape(self.B_SOLD_ED)}\s(\d{{2}})/(\d{{2}})/\d{{4}}"
-        match_ed = re.search(pattern_date_ed,self.text)
-        self.date_ed = f"{match_ed.group(1)}/{match_ed.group(2)}"
-
-    def get_sold(self):
-        pattern_sold_st = rf'{re.escape(self.B_SOLD_ST)}\s+\d{{2}}/\d{{2}}/\d{{4}}\s+(\d{{1,3}}(?:[ \d]*\d)?\,\d{{2}})'
-        match_st = re.search(pattern_sold_st,self.text)
-        pattern_sold_ed = rf'{re.escape(self.B_SOLD_ED)}\s+\d{{2}}/\d{{2}}/\d{{4}}\s+(\d{{1,3}}(?:[ \d]*\d)?\,\d{{2}})'
-        match_ed = re.search(pattern_sold_ed,self.text)
-        self.sold_st = round(float(match_st.group(1).replace(',', '.').replace(' ', '')),2)
-        self.sold_ed = round(float(match_ed.group(1).replace(',', '.').replace(' ', '')),2)
+    def extract_text_and_positions(self):
+        doc = fitz.open(self.path)  # Open the PDF file
+        word_positions = []  # List to hold words and their positions
+        all_txt = ""
         
-        self.tot_op = 0
+        for page_num, page in enumerate(doc):
+            words = page.get_text("words")
+            for word in words:
+                x0, y0, x1, y1, text, _, _, _ = word  # Unpack the word and coordinates
+                # Append the word along with its position and the page number for sorting
+                word_positions.append([x0, y0, text, page_num])
+        
+        # Sort word positions by page number, then by y0 (top-to-bottom), then by x0 (left-to-right)
+        word_positions.sort(key=lambda w: (w[3], w[1], w[0]))
+        
+        # Create the text in the correct reading order
+        all_txt = " ".join([word[2] for word in word_positions])
+        
+        self.tab_word_position = word_positions
+        return all_txt.strip() 
+
+    def separate_in_lines(self):
+        tol = YTOL
+        idw_c = 0
+        tmp_line = [self.tab_word_position[idw_c]]
+        l_c = self.tab_word_position[idw_c][1]
+        idw_c += 1
+        while idw_c < len(self.tab_word_position):
+            w = self.tab_word_position[idw_c]
+            if "Ancien" in w:
+                a = 1
+
+            if abs(w[1] - l_c) <= tol:
+                tmp_line.append(w)
+            else:
+                tmp_line.sort(key=lambda w: w[0])
+                self.tab_lines.append(tmp_line)
+                tmp_line = [w]
+                l_c = w[1]
+            idw_c += 1
+        self.tab_lines.append(tmp_line)
+
+    def find_start_end(self):
+        """"Search for FLAG_ACCOUNT, once found, search for start and end references and return the line number"""
+        flg_account = False
+        for i,line in enumerate(self.tab_lines):
+            txt = ""
+            for w in line:
+                txt += w[2] + " "
+            if not flg_account and self.FLAG_ACCOUNT in txt: 
+                flg_account = True # FLAG_ACCOUNT found
+            if flg_account:
+                if re.match(self.ref_start, txt, re.IGNORECASE) and self.id_st is None:
+                    self.id_st = i
+                elif re.match(self.ref_end, txt, re.IGNORECASE) and self.id_ed is None:
+                    self.id_ed = i
+                    break
+
+    def group_FO(self):
+        """Group the lines for each Financial Operation"""
+        tmp_l = []
+        for line in self.txt_line_opti:
+            if line[0][1] > YENDPAGE or line[0][1] < YSTARTPAGE:
+                continue
+            if line[0][0] > XTOTAL: # if case total
+                self.Fo_lines.append(tmp_l)
+                tmp_l = []
+                break
+            if bool(re.match(r"^\d{2}/\d{2}$", line[0][2])): # fist word with good syntax
+                if tmp_l != []: # case if new Fo line (save the previous and init for the next)
+                    self.Fo_lines.append(tmp_l)
+                    tmp_l = []
+                if line[-1][0]>=XMIN: # last word with good x (on the right side of the page) -> line in fo
+                    tmp_l.append(line)
+            elif tmp_l != []:
+                tmp_l.append(line)
+
+    def get_text_fo_lines(self):
+        for lines in self.Fo_lines:
+            txt = []
+            val_txt = ""
+            for i,line in enumerate(lines): # the first word is XX/XX
+                tmp_txt = ""
+                for j,w in enumerate(line):
+                    if i == 0:
+                        if w[0] > XMIN: # it is the value
+                            if val_txt == "":
+                                if w[0] < XENDNEGATIF:
+                                    val_txt = "-"
+                            val_txt += w[2]
+                        elif j != 0:
+                            tmp_txt += w[2] + " "
+                    else:
+                        tmp_txt += w[2] + " "
+                txt.append(tmp_txt.strip())
+            txt.append(val_txt)
+            self.fo_txts.append(txt)
+
+    def get_value_and_description(self):
+        val = 0
+        # Get Description #
+        desc = self.get_fo_txt_description()
+        # Get value and final Tab #
+        for i,fo_txt in enumerate(self.fo_txts):
+            val = round(float(fo_txt[-1].replace(",",".")),2)
+            self.ret_tab.append([desc[i],val])
+    
+    def get_fo_txt_description(self):
+        """Get the financial operation description and associated value"""
+        patt_rmv_date = r"\b\d{2}\.\d{2}\.\d{2}\b"  # Matches 'XX.XX.XX'
+        ret_txt = []
+        for fo_txt in self.fo_txts:
+            ## First Line ##
+            # Remove date in the first line
+            fo_txt[0] = re.sub(patt_rmv_date, "", fo_txt[0]).strip()
+            # Remove number
+            fo_txt[0] = re.sub(r"[^a-zA-Z ]", "", fo_txt[0])
+            ## Second Line ##
+            # Remove second line if special Case
+            for B in B_REMOVE_LINE:
+                if B in fo_txt[1]:
+                    del fo_txt[1]
+            ## Build final txt ##
+            desc = None
+            # First line is enough #
+            for B in B_FIRST_LINE_IS_ENOUGH:
+                if B in fo_txt[0]:
+                    desc = fo_txt[0]
+            # Take the name in the next section #
+            for B in B_TAKE_NAME_NEXT_LINE:
+                if B in fo_txt[0]:
+                    name = " ".join(re.findall(r'\b[a-zA-Z]{3,}\b', fo_txt[1])[:2]) 
+                    desc = fo_txt[0] + " " + name
+            # Default Case #
+            if desc is None:
+                desc = " ".join(fo_txt[:-1]) # by default take all the description
+            # Remove Balise in final description
+            for B in B_REMOVE_TXT:
+                if B in desc:
+                    desc = desc.replace(B,"")
+            ret_txt.append(desc.strip()) # add the final description and the value
+        return ret_txt
+    
+    def build_FO(self):
+        for fo in self.ret_tab:
+            op = FinancialOperation(num=len(self.financial_operation)+1,
+                                                type=-1 if fo[1]< 0 else 1,
+                                                name=fo[0],
+                                                value=fo[1]
+                                                )
+            self.financial_operation.append(op)
+        # Tot Operation #
         for op in self.financial_operation:
             self.tot_op+=op.value
         self.tot_op = round(self.tot_op,2)
-            
-        if not round(self.sold_st + self.tot_op,0) == round(self.sold_ed,0):
-            if round(-self.sold_st + self.tot_op,0) == round(self.sold_ed,0):
-                self.sold_st = -self.sold_st
-            elif round(self.sold_st + self.tot_op,0) == round(-self.sold_ed,0):
-                self.sold_ed = -self.sold_ed
-            elif round(-self.sold_st + self.tot_op,0) == round(-self.sold_ed,0):
-                self.sold_st = -self.sold_st
-                self.sold_ed = -self.sold_ed
+    def get_value(self):
+        return self.financial_operation,self.month,self.year,self.sold_st,self.sold_ed,self.date_st,self.date_ed,self.tot_op
+
+    def get_sold(self):
+        val_st_txt = ""
+        val_ed_txt = ""
+        # START #
+        for w in self.txt_line_opti[0]:
+            if w[0] > XMIN:
+                if val_st_txt == "" and w[0] < XENDNEGATIF:
+                    if w[0] > XENDNEGATIF:
+                        val_st_txt = "-"
+                val_st_txt +=  w[2]
+        self.sold_st = round(float(val_st_txt.replace(",",".")),2)
+        # END #
+        for w in self.txt_line_opti[-1]:
+            if w[0] > XMIN:
+                if val_ed_txt == "" and w[0] < XENDNEGATIF:
+                    if w[0] > XENDNEGATIF:
+                        val_ed_txt = "-"
+                val_ed_txt +=  w[2]
+        self.sold_ed = round(float(val_ed_txt.replace(",",".")),2)
+
+        if round(self.sold_st + self.tot_op) != round(self.sold_ed):
+            print("Warning : self.sold_st + self.tot_op != self.sold_ed")
+
+    def get_date(self):
+        d = self.txt_line_opti[-1][3][2].split("/")
+        self.month = month_number_to_name(d[1])
+        self.year = d[2]
+        self.date_st = self.txt_line_opti[0][3][2].split("/")[0] + "/" + self.txt_line_opti[0][3][2].split("/")[1]
+        self.date_ed = self.txt_line_opti[-1][3][2].split("/")[1] + "/" + self.txt_line_opti[-1][3][2].split("/")[0]
+
+if __name__ == "__main__":
+    PATH = r"C:/Users/mcast/OneDrive/Bureau/releve_CCP2142397R038_20241227.pdf"
+    a = ExtractionLbp2024(PATH)
+
+    a=1
     
-    def extract_lpb_2024(self):
-        '''
-        Extract information from a pdf with "la banque postal" convention
-        '''
-        for matching_line in self.matching_lines:
-            balise_name = self.get_balise(matching_line)
-            balise_type = self.get_balise_type(balise_name)
-            pattern_name,pattern_amount = self.get_pattern(balise_name,balise_type)
-            if pattern_name is not None and pattern_amount is not None:
-                match_name = re.search(pattern_name, matching_line)
-                match_amout = re.search(pattern_amount, matching_line)
-                
-                if match_name and match_amout:
-                    name = self.update_description(match_name.group(1),balise_name)
-                    value = round(float(match_amout.group(1).replace(',', '.').replace(' ', '')),2)
-                    op = FinancialOperation(num=len(self.financial_operation)+1,
-                                            type=balise_type,
-                                            name=name,
-                                            value=value
-                                            )
-                    self.financial_operation.append(op)
-                else:
-                    raise Exception (f'No match for matching_line: {matching_line}\n{match_name}\n{match_amout}')
-            else:
-                print(f'None Balise : {balise_name}')
-            
-    def set_sign(self):
-        for fo in self.financial_operation:
-            if fo.type == BUY_VALUE:
-                fo.value = -fo.value

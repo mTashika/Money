@@ -135,7 +135,7 @@ class App(ctk.CTk):
         self.label_month = ctk.CTkLabel(frame_choice_update, text="Month",font=("Arial", 17,'bold'))
         self.label_month.pack(pady=(20, 0), padx=20, anchor='w')
         
-        self.entry_month = ctk.CTkComboBox(frame_choice_update, variable=self.month_vr, width=WIDTH,values=[''])
+        self.entry_month = ctk.CTkComboBox(frame_choice_update, variable=self.month_var, width=WIDTH,values=[''])
         self.entry_month.pack(pady=(10,20), padx=20, anchor='w')
         
         self.checkbox_update = ctk.CTkCheckBox(frame_choice_update, text='', variable=self.checkbox_update_var, onvalue=CHECK_UPDATE, offvalue=0,command=lambda: self.on_checkbox_toggle(self.checkbox_update_var))
@@ -241,7 +241,7 @@ class App(ctk.CTk):
                 # Convertir chaque frame en RGBA pour gérer la transparence
                 frame = self.gif.convert("RGBA")
                 # Redimensionner la frame
-                frame = frame.resize(target_size, Image.ANTIALIAS)
+                frame = frame.resize(target_size)
                 self.frames.append(ImageTk.PhotoImage(frame))
                 self.gif.seek(len(self.frames))  # Passer à la prochaine frame
         except EOFError:

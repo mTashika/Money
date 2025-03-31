@@ -5,6 +5,15 @@ from openpyxl.worksheet.datavalidation import DataValidation
 import Const as C
 from Const_Balise_Excel import DETAIL,EXT_VAL
 
+def month_number_to_name(month_number):
+    month_number = int(month_number)
+    months = {
+        1: "Janvier", 2: "Février", 3: "Mars", 4: "Avril",
+        5: "Mai", 6: "Juin", 7: "Juillet", 8: "Août",
+        9: "Septembre", 10: "Octobre", 11: "Novembre", 12: "Décembre"
+    }
+    return months.get(month_number, "Mois invalide")
+
 def set_all_data_validation(wb):
     f_ok = False
     for ws in wb.worksheets:
