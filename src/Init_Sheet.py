@@ -4,6 +4,8 @@ from openpyxl.styles import Font,Alignment,PatternFill,Side,Border
 from Protection import unprotect_cell,unprotect_range,protect_ws
 
 FORMAT_COMPTA = "0.00 €"
+
+
 class InitSheet:
     def __init__(self, ws):
         self.ws = ws
@@ -19,28 +21,30 @@ class InitSheet:
         self.set_protection()
 
     def set_big_border(self):
+        """ Dotted Border """
         for col in range(1, 11):
             cell = self.ws.cell(row=10, column=col)
             cell.border =  Border(bottom=Side(border_style='dotted', color='000000'))
         for row in range(1, 10):
             cell = self.ws.cell(row=row, column=11)
             cell.border =  Border(right=Side(border_style='dotted', color='000000'))
-        
         cell = self.ws.cell(row=10, column=11)
         cell.border =  Border(bottom=Side(border_style='dotted', color='000000'),right=Side(border_style='dotted', color='000000'))
 
     def set_column_width(self):
         self.ws.column_dimensions['A'].width = 15
         self.ws.column_dimensions['B'].width = 17
-        self.ws.column_dimensions['C'].width = 24
-        self.ws.column_dimensions['D'].width = 12
-        self.ws.column_dimensions['E'].width = 10
-        self.ws.column_dimensions['F'].width = 15
+        self.ws.column_dimensions['C'].width = 10
+        self.ws.column_dimensions['D'].width = 10
+        self.ws.column_dimensions['E'].width = 55
+        self.ws.column_dimensions['F'].width = 12
         self.ws.column_dimensions['G'].width = 15
         self.ws.column_dimensions['H'].width = 15
         self.ws.column_dimensions['I'].width = 15
         self.ws.column_dimensions['J'].width = 15
         self.ws.column_dimensions['K'].width = 15
+        self.ws.column_dimensions['L'].width = 15
+        self.ws.column_dimensions['M'].width = 15
         
     def set_line_height(self):
         self.ws.row_dimensions[1].height = 20
@@ -53,7 +57,10 @@ class InitSheet:
         self.ws.row_dimensions[8].height = 20
         self.ws.row_dimensions[9].height = 15
         self.ws.row_dimensions[10].height = 20
-        
+        self.ws.row_dimensions[11].height = 20
+        self.ws.row_dimensions[12].height = 20
+        self.ws.row_dimensions[13].height = 20
+        # HERE : changer la creation d une sheet pour ajouter les deux colonnes et commenter et verifier.
     def write_start(self):
         cell_date_b = self.ws.cell(1, 1)
         cell_start_b = self.ws.cell(2, 1)

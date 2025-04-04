@@ -1,3 +1,8 @@
+"""
+Manage the excel file.
+Method to create or find the excel file and sheet.
+"""
+
 import os
 import openpyxl
 from tkinter import messagebox
@@ -52,12 +57,13 @@ class ManageExcelFile:
         
     def check_excel_file_and_sheet(self):
         """
-        Vérifie si un fichier Excel existe, est accessible, et si un onglet spécifique existe dans ce fichier.
-        :param self.file_path: Chemin du fichier Excel.
-        :param self.ws_name: Nom de l'onglet à vérifier.
-        :return: Tuple (wb_exists, sheet_exists) :
-                - wb_exists: True si le fichier existe et est accessible, False sinon.
-                - sheet_exists: True si l'onglet existe et est accessible, False sinon.
+        Check whether an Excel file exists, is accessible, and whether a specific worksheet exists within it.
+
+        :param self.file_path: Path to the Excel file.
+        :param self.ws_name: Name of the worksheet to verify.
+        :return: Tuple (wb_exists, sheet_exists):
+                - wb_exists: True if the file exists and is accessible, False otherwise.
+                - sheet_exists: True if the worksheet exists and is accessible, False otherwise.
         """
         try:
             wb_exists = os.path.isfile(self.file_path) and os.access(self.file_path, os.R_OK)
@@ -80,12 +86,6 @@ class ManageExcelFile:
             raise Exception(f"Une erreur s'est produite: {e}")
         
     def get_wb_ws(self):
-        # if not self.wb_valid:
-        #     print('Workbook not valid')
-        #     return None,None
-        # if not self.ws_valid:
-        #     print('Worksheet not valid')
-        #     return None,None
         return self.wb,self.ws
     
     def save_wb(self):

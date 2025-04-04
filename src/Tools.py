@@ -95,11 +95,7 @@ def get_current_month():
 def get_current_year():
     return datetime.now().strftime("%Y")
 
-def custom_sort_fincancial_operation(fo):
-    # On renvoie un tuple : le premier élément détermine l'ordre (positif ou négatif),
-    # le second élément est la valeur elle-même pour le tri interne
-    value = fo.value
-    return (1 if value < 0 else 0, -value if value >= 0 else value)
+
 
 class FinancialOperation:
     '''
