@@ -10,10 +10,10 @@ def set_protection(ws,mks):
     cell_val_ex_los = ws.cell(mks.B_LOS_TOT_EX[0],mks.B_LOS_TOT_EX[1])
     unprotect_cell(cell_val_ex_los)
     
-    unprotect_range(ws,mks.B_IN_ST_LINE,mks.B_DETAIL_LINE_ST-2,mks.B_IN_NAME_COL,mks.B_REAL_COL_ED)
-    unprotect_range(ws,mks.B_LOS_ST_LINE,mks.B_DETAIL_LINE_ST-2,mks.B_LOS_NAME_COL,mks.B_REAL_COL_ED)
-    unprotect_range(ws,mks.B_BILAN_DATE[0],100,mks.B_VALID_EXT_PATH[1]+2,100)
-    unprotect_range(ws,mks.B_DETAIL_LINE_ST,mks.B_ext_ed_line,mks.B_ID_C1_COL,mks.B_ID_C2_COL)
+    unprotect_range(ws,mks.B_IN_ST_LINE,mks.B_DETAIL_LINE_ST-3,mks.B_IN_NAME_COL,mks.B_REAL_COL_ED)
+    unprotect_range(ws,mks.B_LOS_ST_LINE,mks.B_DETAIL_LINE_ST-3,mks.B_LOS_NAME_COL,mks.B_REAL_COL_ED)
+    unprotect_range(ws,mks.B_BILAN_DATE[0],100,mks.B_REAL_COL_ED+1,100)
+    unprotect_range(ws,mks.B_DETAIL_LINE_ST,mks.B_ext_ed_line,mks.B_ID_C1_COL,mks.B_ID_REFUND_COL)
     
 def protect_wb(wb):
     wb.security.lockStructure = True
@@ -36,5 +36,6 @@ def unprotect_range(ws, min_row, max_row, min_col, max_col):
     
 def unprotect_cell(cell):
     cell.protection = cell.protection.copy(locked=False)
+
 def protect_cell(cell):
     cell.protection = cell.protection.copy(locked=True)

@@ -28,6 +28,8 @@ class SheetMarker():
         self.B_DETAIL_LINE_ST = None # detail line start
         self.B_ID_C1_COL = None # identification categorie 1 column
         self.B_ID_C2_COL = None # identification categorie 2 column
+        self.B_ID_TYPE_COL = None # identification Type column
+        self.B_ID_REFUND_COL = None # identification Refund column
         
         self.B_EXT_NAME_COL = None # extraction name column
         self.B_EXT_VALUE_COL = None # extraction value column
@@ -73,12 +75,14 @@ class SheetMarker():
                     self.B_LOS_TOT_EX = [row+1,col+1]
                     self.B_LOS_TOT_REAL = [row+1,col+2]
                 elif cell_value == BE.DETAIL:
-                    self.B_DETAIL_LINE_ST = row+1
+                    self.B_DETAIL_LINE_ST = row+2
                     self.B_ID_C1_COL = col
                     self.B_ID_C2_COL = col+1
-                    self.B_EXT_NAME_COL = col+2
-                    self.B_EXT_VALUE_COL = col+3
-                    self.B_REAL_COL_ST = col+5
+                    self.B_ID_TYPE_COL = col+2
+                    self.B_ID_REFUND_COL = col+3
+                    self.B_EXT_NAME_COL = col+4
+                    self.B_EXT_VALUE_COL = col+5
+                    self.B_REAL_COL_ST = col+7
                     self.B_REAL_COL_ED = self.B_REAL_COL_ST+5
                 elif cell_value == BE.VALIDITY:
                     self.B_VALID_EXT_PATH = [row+1,col+2]
@@ -88,8 +92,6 @@ class SheetMarker():
                 elif cell_value == BE.EXT_VAL:
                     self.b_ext_sold_ed_est = [row,col+1]
                     self.b_ext_verif = [row,col+2]
-                    
-                # print(f"Valeur à la ligne {row}, colonne {col} : {cell_value}")
                 
         for row in range(self.B_IN_ST_LINE, self.B_DETAIL_LINE_ST):
             cv = self.sheet.cell(row=row, column=self.B_IN_NAME_COL).value
@@ -125,7 +127,7 @@ class SheetMarker():
 
 if __name__ == "__main__":
     import openpyxl
-    path = r"D:\One Drive\OneDrive\Bureau\Classeur1.xlsx"
+    path = r"C:\Users\mcast\OneDrive\Bureau\Classeur1.xlsx"
     workbook = openpyxl.load_workbook(path)
     sheet = workbook.active
     s = SheetMarker(sheet)

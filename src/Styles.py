@@ -38,7 +38,7 @@ class StyleCell():
             style_cat1 = NamedStyle(
                 name=style_cat1,
                 font=Font(color="FF000000"),
-                fill=PatternFill(start_color="FFC3C0", end_color="FFC3C0", fill_type="solid"),
+                fill=PatternFill(start_color="FFC5E0B3", end_color="FFC5E0B3", fill_type="solid"),
                 border=self.thin_border,
                 alignment=Alignment(horizontal='center', vertical='center'),
             )
@@ -47,17 +47,32 @@ class StyleCell():
         # Générer et ajouter des styles pour les catégories
         for i, c in enumerate(colors_cat1):
             self.gen_style_cat1_(f'style_cat1_{i+1}', c)
-            
+
+        # Ajouter le style "style_cat2"    
         style_cat2 = "style_cat2"
         if style_cat2 not in wb.named_styles:
             style_cat2 = NamedStyle(
                 name=style_cat2,
-                font=Font(color="FF808080",italic=True),
-                fill=PatternFill(start_color="FFF2F2F2", end_color="FFF2F2F2", fill_type="solid"),
+                font=Font(color="FF000000",italic=True),
+                fill=PatternFill(start_color="FFE2EFDA", end_color="FFE2EFDA", fill_type="solid"),
                 border=self.thin_border,
                 alignment=Alignment(horizontal='center', vertical='center'),
             )
             wb.add_named_style(style_cat2)
+        
+        # Ajouter le style "style_col1"    
+        style_col1 = "style_col1"
+
+
+        if style_col1 not in wb.named_styles:
+            style_col1 = NamedStyle(
+                name=style_col1,
+                font=Font(color="FF000000"),
+                fill=PatternFill(start_color="FFE0F2F4", end_color="FFE0F2F4", fill_type="solid"),
+                border=self.thin_border,
+                alignment=Alignment(horizontal='center', vertical='center'),
+            )
+            wb.add_named_style(style_col1)
 
     def gen_style_cat1_(self, name, color):
         if name not in self.wb.named_styles:

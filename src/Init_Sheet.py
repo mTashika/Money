@@ -10,41 +10,45 @@ class InitSheet:
     def __init__(self, ws):
         self.ws = ws
         self.set_big_border()
-        self.set_column_width()
         self.set_line_height()
         self.write_start()
         self.write_bilan()
         self.write_income()
         self.write_loss()
         self.write_detail()
+        self.write_tab()
         self.write_validity()
+        self.set_column_width()
         self.set_protection()
 
     def set_big_border(self):
         """ Dotted Border """
-        for col in range(1, 11):
+        for col in range(1, 13):
             cell = self.ws.cell(row=10, column=col)
             cell.border =  Border(bottom=Side(border_style='dotted', color='000000'))
         for row in range(1, 10):
-            cell = self.ws.cell(row=row, column=11)
+            cell = self.ws.cell(row=row, column=13)
             cell.border =  Border(right=Side(border_style='dotted', color='000000'))
-        cell = self.ws.cell(row=10, column=11)
+        cell = self.ws.cell(row=10, column=13)
         cell.border =  Border(bottom=Side(border_style='dotted', color='000000'),right=Side(border_style='dotted', color='000000'))
 
     def set_column_width(self):
         self.ws.column_dimensions['A'].width = 15
         self.ws.column_dimensions['B'].width = 17
-        self.ws.column_dimensions['C'].width = 10
-        self.ws.column_dimensions['D'].width = 10
+        self.ws.column_dimensions['C'].width = 13
+        self.ws.column_dimensions['D'].width = 15
         self.ws.column_dimensions['E'].width = 55
         self.ws.column_dimensions['F'].width = 12
-        self.ws.column_dimensions['G'].width = 15
-        self.ws.column_dimensions['H'].width = 15
-        self.ws.column_dimensions['I'].width = 15
-        self.ws.column_dimensions['J'].width = 15
-        self.ws.column_dimensions['K'].width = 15
-        self.ws.column_dimensions['L'].width = 15
-        self.ws.column_dimensions['M'].width = 15
+        self.ws.column_dimensions['G'].width = 3
+        self.ws.column_dimensions['H'].width = 19
+        self.ws.column_dimensions['I'].width = 19
+        self.ws.column_dimensions['J'].width = 19
+        self.ws.column_dimensions['K'].width = 19
+        self.ws.column_dimensions['L'].width = 5
+        self.ws.column_dimensions['M'].width = 19
+        self.ws.column_dimensions['N'].width = 19
+        self.ws.column_dimensions['O'].width = 19
+        self.ws.column_dimensions['P'].width = 19
         
     def set_line_height(self):
         self.ws.row_dimensions[1].height = 20
@@ -60,7 +64,7 @@ class InitSheet:
         self.ws.row_dimensions[11].height = 20
         self.ws.row_dimensions[12].height = 20
         self.ws.row_dimensions[13].height = 20
-        # HERE : changer la creation d une sheet pour ajouter les deux colonnes et commenter et verifier.
+
     def write_start(self):
         cell_date_b = self.ws.cell(1, 1)
         cell_start_b = self.ws.cell(2, 1)
@@ -79,14 +83,13 @@ class InitSheet:
         cell_start_b.alignment = Alignment(horizontal='center', vertical='center')
         cell_sold_st.alignment = Alignment(horizontal='right', vertical='center')
         cell_date_txt.alignment = Alignment(horizontal='center', vertical='center')
-        
-        
+
         cell_date_b.value = CEB.BILAN_DATE
         cell_date_b.number_format = f';;;"{CET.INIT_DATE}"'
         cell_start_b.value = CEB.BILAN_ST_SOLD
         cell_start_b.number_format = f';;;"{CET.INIT_SOLD_ST}"'
         
-    def write_bilan(self):
+    def write_bilan(self):  
         cell_title_b  = self.ws.cell(4,1)
         cell_title_ex = self.ws.cell(4,2)
         cell_title_re = self.ws.cell(4,3)
@@ -200,10 +203,10 @@ class InitSheet:
         cell_title_b = self.ws.cell(7,5)
         cell_title_tot = self.ws.cell(8,5)
         cell_val_ex = self.ws.cell(8,6)
-        cell_val_re = self.ws.cell(8,7)
+        cell_val_re = self.ws.cell(8,8)
         cell_title_name = self.ws.cell(10,5)
         cell_title_ex = self.ws.cell(10,6)
-        cell_title_re = self.ws.cell(10,7)
+        cell_title_re = self.ws.cell(10,8)
 
         cell_title_b.font = Font(size=16, bold=True)
         cell_title_tot.font = Font(size=16, bold=True)
@@ -241,7 +244,9 @@ class InitSheet:
         cell_val_ex.border = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thick'))
         cell_val_re.border = Border(left=Side(style='thin'),right=Side(style='thick'),top=Side(style='thick'),bottom=Side(style='thick'))
 
-        self.ws.merge_cells(start_row=7, start_column=5, end_row=7, end_column=7)
+        self.ws.merge_cells(start_row=7, start_column=5, end_row=7, end_column=8)
+        self.ws.merge_cells(start_row=8, start_column=6, end_row=8, end_column=7)
+        self.ws.merge_cells(start_row=10, start_column=6, end_row=10, end_column=7)
         
         cell_val_ex.value = "=SUM(F11:F25)"
         cell_title_b.value = CEB.LOSS
@@ -251,26 +256,73 @@ class InitSheet:
         cell_title_ex.value = CET.INIT_TITLE_EXPECTED
         cell_title_re.value = CET.INIT_TITLE_REAL
 
+        for i in range(11,26):
+            self.ws.merge_cells(start_row=i, start_column=6, end_row=i, end_column=7)
+
     def write_detail(self):
         cell_detail_b = self.ws.cell(26,1)
-        cell_est_sold = self.ws.cell(28,1)
+        cell_est_sold = self.ws.cell(29,1)
 
         cell_detail_b.font = Font(size=11)
         cell_est_sold.font = Font(size=11)
         
-        cell_detail_b.style = "Accent1"
         cell_detail_b.alignment = Alignment(horizontal='center', vertical='center')
         cell_est_sold.alignment = Alignment(horizontal='center', vertical='center')
 
-        # cell_detail_b.fill = PatternFill(start_color='F7C7AC', end_color='F7C7AC', fill_type='solid')
+        for i in range(1,13):
+            self.ws.cell(26,i).border = Border(top=Side(style='dotted'))
 
-        # cell_detail_b.border = Border(left=Side(style='thick'),right=Side(style='thick'),top=Side(style='thick'),bottom=Side(style='thick'))
-
-        self.ws.merge_cells(start_row=26, start_column=1, end_row=26, end_column=11)
+        self.ws.merge_cells(start_row=26, start_column=1, end_row=26, end_column=13)
         
         cell_detail_b.value = CEB.DETAIL
-        cell_detail_b.number_format = f';;;"{CET.INIT_DETAIL}"'
+        cell_detail_b.number_format = f';;;""'
         cell_est_sold.value = CEB.EXT_VAL
+    
+    def write_tab(self):
+        cell_cat1   = self.ws.cell(27,1)
+        cell_cat2   = self.ws.cell(27,2)
+        cell_intern = self.ws.cell(27,3)
+        cell_share  = self.ws.cell(27,4)
+        cell_name   = self.ws.cell(27,5)
+        cell_value  = self.ws.cell(27,6)
+
+
+        fill_color = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+
+        cell_cat1.fill = fill_color
+        cell_cat2.fill = fill_color
+        cell_intern.fill = fill_color
+        cell_share.fill = fill_color
+        cell_name.fill = fill_color
+        cell_value.fill = fill_color
+
+        cell_cat1.font = Font(size=14, color="FFFFFF")
+        cell_cat2.font = Font(size=14, color="FFFFFF")
+        cell_intern.font = Font(size=14, color="FFFFFF")
+        cell_share.font = Font(size=14, color="FFFFFF")
+        cell_name.font = Font(size=14, color="FFFFFF")
+        cell_value.font = Font(size=14, color="FFFFFF")
+
+        cell_cat1.alignment = Alignment(horizontal='center', vertical='center')
+        cell_cat2.alignment = Alignment(horizontal='center', vertical='center')
+        cell_intern.alignment = Alignment(horizontal='center', vertical='center')
+        cell_share.alignment = Alignment(horizontal='center', vertical='center')
+        cell_name.alignment = Alignment(horizontal='center', vertical='center')
+        cell_value.alignment = Alignment(horizontal='center', vertical='center')
+
+        cell_cat1.border = Border(left=Side(style='thick'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thick'))
+        cell_cat2.border = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thick'))
+        cell_intern.border = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thick'))
+        cell_share.border = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thick'))
+        cell_name.border = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thick'))
+        cell_value.border = Border(left=Side(style='thin'),right=Side(style='thick'),top=Side(style='thick'),bottom=Side(style='thick'))
+
+        cell_cat1.value = CET.INIT_TAB_COL_CAT1
+        cell_cat2.value = CET.INIT_TAB_COL_CAT2
+        cell_intern.value = CET.INIT_TAB_COL_TYPE
+        cell_share.value = CET.INIT_TAB_COL_REFUND
+        cell_name.value = CET.INIT_TAB_COL_NAME
+        cell_value.value = CET.INIT_TAB_COL_VALUE
 
     def write_validity(self):
         cell_title_b       = self.ws.cell(1,8)
@@ -315,35 +367,6 @@ class InitSheet:
         cell_val_id_date.alignment = Alignment(horizontal='left', vertical='center')
         cell_val_re_date.alignment = Alignment(horizontal='left', vertical='center')
         
-        # fill_color = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
-        # cell_title_b.fill = fill_color
-        # cell_title_ex1.fill = fill_color
-        # cell_title_ex2.fill = fill_color
-        # cell_title_id.fill = fill_color
-        # cell_title_re.fill = fill_color
-        # cell_title_path.fill = fill_color
-        # cell_title_date_ex.fill = fill_color
-        # cell_title_date_id.fill = fill_color
-        # cell_title_date_re.fill = fill_color
-        # cell_val_ex_path.fill = fill_color
-        # cell_val_ex_date.fill = fill_color
-        # cell_val_id_date.fill = fill_color
-        # cell_val_re_date.fill = fill_color
-        
-        # cell_title_b.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_title_ex1.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_title_ex2.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_title_id.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_title_re.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_title_path.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_title_date_ex.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_title_date_id.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_title_date_re.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_val_ex_path.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_val_ex_date.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_val_id_date.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        # cell_val_re_date.border = Border(left=Side(style=None),right=Side(style=None),top=Side(style=None),bottom=Side(style=None))
-        
         self.ws.merge_cells(start_row=1, start_column=8, end_row=1, end_column=10)
         
         cell_title_b.value = CEB.VALIDITY
@@ -361,20 +384,20 @@ class InitSheet:
         # protect all the sheet
         protect_ws(self.ws)
         
-        # unprotect certain part
-        cell_val_ex = self.ws.cell(8,2)
-        unprotect_cell(cell_val_ex)
-        cell_val_ex = self.ws.cell(8,6)
-        unprotect_cell(cell_val_ex)
+        # # unprotect certain part
+        # cell_val_ex = self.ws.cell(8,2)
+        # unprotect_cell(cell_val_ex)
+        # cell_val_ex = self.ws.cell(8,6)
+        # unprotect_cell(cell_val_ex)
         
-        unprotect_range(self.ws,11,25,1,11)
-        unprotect_range(self.ws,1,100,12,100)
+        unprotect_range(self.ws,11,25,1,13)
+        unprotect_range(self.ws,1,100,14,100)
     
 if __name__ == "__main__":
     import openpyxl
     from Styles import StyleCell
     
-    path = r"D:\One Drive\OneDrive\Bureau\Classeur1.xlsx"
+    path = r"C:\Users\mcast\OneDrive\Bureau\Classeur1.xlsx"
     workbook = openpyxl.load_workbook(path)
     StyleCell(workbook)
     ws = workbook.active

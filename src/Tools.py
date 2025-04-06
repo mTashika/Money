@@ -3,6 +3,7 @@ from openpyxl.utils import range_boundaries,get_column_letter
 from datetime import datetime
 from openpyxl.worksheet.datavalidation import DataValidation
 import Const as C
+import Const_txt_excel as CT
 from Const_Balise_Excel import DETAIL,EXT_VAL
 
 def month_number_to_name(month_number):
@@ -14,25 +15,33 @@ def month_number_to_name(month_number):
     }
     return months.get(month_number, "Mois invalide")
 
-def set_all_data_validation(wb):
-    f_ok = False
+def set_all_data_validation(wb,mkrs):
     for ws in wb.worksheets:
         if ws.title != C.TOOL_SHEET_NAME:
             dv1 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$A:$A")
             dv2 = DataValidation(type="list", formula1=f"={C.TOOL_SHEET_NAME}!$B:$B")
+            dv3 = DataValidation(type="list", formula1='"' + ','.join(C.VALID_TYPE) + '"',
+                    showErrorMessage=True,
+                    errorTitle = CT.DATA_VAL_ERROR_INTERN_TITLE,
+                    error = CT.DATA_VAL_ERROR_INTERN_MSG)
+            dv4 = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1="0", showDropDown=False,
+                    showErrorMessage=True,
+                    errorTitle = CT.DATA_VAL_ERROR_SHARE_TITLE,
+                    error = CT.DATA_VAL_ERROR_SHARE_MSG)
+            
             ws.add_data_validation(dv1)
             ws.add_data_validation(dv2)
-            for row in range(1, ws.max_row + 1):
+            ws.add_data_validation(dv3)
+            ws.add_data_validation(dv4)
+
+            for row in range(mkrs.B_DETAIL_LINE_ST, ws.max_row + 1):
                 cell_value = ws.cell(row=row, column=1).value
-                if cell_value == DETAIL:
-                    f_ok = True
-                    continue
-                elif cell_value == EXT_VAL:
-                    f_ok = False
+                if cell_value == EXT_VAL:
                     break
-                if f_ok:
-                    dv1.add(ws.cell(row=row,column=1))
-                    dv2.add(ws.cell(row=row,column=2))
+                dv1.add(ws.cell(row=row,column = mkrs.B_ID_C1_COL))
+                dv2.add(ws.cell(row=row,column = mkrs.B_ID_C2_COL))
+                dv3.add(ws.cell(row=row,column = mkrs.B_ID_TYPE_COL))
+                dv4.add(ws.cell(row=row,column = mkrs.B_ID_REFUND_COL))
 
 def check_cell_value(cell_value):
     if cell_value is None:
@@ -55,6 +64,7 @@ def clear_zone(ws,minrow,maxrow,mincol,maxcol):
                 cell = ws.cell(row=row, column=col)
                 cell.value = None
                 cell.style = 'Normal'
+
 def unmerge_cells_by_coords(ws, start_row, start_col, end_row, end_col):
     start_cell = get_column_letter(start_col) + str(start_row)
     end_cell = get_column_letter(end_col) + str(end_row)
@@ -98,9 +108,7 @@ def get_current_year():
 
 
 class FinancialOperation:
-    '''
-    Classe used for the data extraction from a PDF
-    '''
+    """ Classe used for the data extraction from a PDF. """
     def __init__(self,num,type,name,value,unit='€'):
         self.num = num
         self.type = type

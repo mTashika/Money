@@ -49,7 +49,7 @@ class App(ctk.CTk):
 
         # Variables pour stocker les chemins
         self.pdf_path = ctk.StringVar(value="")
-        self.excel_dir_path = ctk.StringVar(value="D:/One Drive/OneDrive/Documents/.Perso/[5] Finance/Compte/Fiche")
+        self.excel_dir_path = ctk.StringVar(value="C:/Users/mcast/OneDrive/Bureau")
         self.year_var = ctk.StringVar(value=get_current_year())
         self.year_var.trace_add("write", self.update_combo_box)
         self.month_var = ctk.StringVar(value=get_current_month())
@@ -329,7 +329,8 @@ class App(ctk.CTk):
             if not self.managment.ws_creat:
                 messagebox.showinfo("Info", f"This sheet ({self.managment.ws_name}) already exist in {self.managment.file_path}")
             else:
-                set_all_data_validation(self.wb)
+                mks = SheetMarker(self.ws)
+                set_all_data_validation(self.wb,mks)
                 is_save_ok = self.managment.save_wb()
                 self.is_paused = True
                 messagebox.showinfo("Success", f"Sheet ({self.managment.ws_name}) created here: {self.managment.file_path}") if is_save_ok else None
@@ -359,7 +360,7 @@ class App(ctk.CTk):
                     mks = SheetMarker(self.ws)
                     WriteExtraction(self.ws,extraction,mks)
                     Valid(self.ws,mks)
-                    set_all_data_validation(self.wb)
+                    set_all_data_validation(self.wb,mks)
                     is_save_ok = self.managment.save_wb()
                     self.is_paused = True
                     messagebox.showinfo("Success", f"Extraction for {self.managment.ws_name} completed successfully!") if is_save_ok else None
@@ -381,10 +382,11 @@ class App(ctk.CTk):
                     self.is_paused = False
                     StyleCell(self.wb)
                     mks = SheetMarker(self.ws)
-                    realisation = MonthRealisation(self.ws,mks)
-                    WriteRealisation(self.ws,mks,realisation)
+                    realisation_month = MonthRealisation(self.ws,mks,"Monthly")
+                    realisation_pdf = MonthRealisation(self.ws,mks,"Pdf")
+                    WriteRealisation(self.ws,mks,realisation_month,realisation_pdf)
                     Valid(self.ws,mks)
-                    set_all_data_validation(self.wb)
+                    set_all_data_validation(self.wb,mks)
                     is_save_ok = self.managment.save_wb()
                     self.is_paused = True
                     self.after(0, self.hide_loading)

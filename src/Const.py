@@ -39,6 +39,10 @@ CAT_2 = [
     "Interim", "Train", "Mère Anaïs", "Anaïs", "Commande", "Parent", 
     "Basic fit", "Bus", "Thalès", "Parking", "Péage"
 ]
+VALID_MONTHLY = "Mensuel"
+VALID_DEFFERED = "Décalé"
+VALID_INTERN = "Interne"
+VALID_TYPE = [VALID_MONTHLY,VALID_DEFFERED,VALID_INTERN]
 
 MONTH_ANG = [
         "January", "February", "March", "April", "May", "June",
@@ -64,6 +68,3 @@ MONTH_SOLD_BALISE = f"{BALISE_SOLD_MONTH}solde fiche de paye (fin du mois)"
 MONTH_SOLD_EST = "Solde estimé :"
 MONTH_VERIF = "Verif"
 MONTH_PREV_SOLD = ['Solde précédent',2,1]
-
-
-NOT_REAL_ACTION = ['Virement Moi','NC']
