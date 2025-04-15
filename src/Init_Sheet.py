@@ -1,7 +1,7 @@
 import Const_txt_excel as CET
 import Const_Balise_Excel as CEB
 from openpyxl.styles import Font,Alignment,PatternFill,Side,Border
-from Protection import unprotect_cell,unprotect_range,protect_ws
+from Protection import set_protection
 
 FORMAT_COMPTA = "0.00 €"
 
@@ -19,17 +19,18 @@ class InitSheet:
         self.write_tab()
         self.write_validity()
         self.set_column_width()
-        self.set_protection()
+        set_protection(self.ws)
+        # self.set_protection()
 
     def set_big_border(self):
         """ Dotted Border """
-        for col in range(1, 13):
+        for col in range(1, 16):
             cell = self.ws.cell(row=10, column=col)
             cell.border =  Border(bottom=Side(border_style='dotted', color='000000'))
         for row in range(1, 10):
-            cell = self.ws.cell(row=row, column=13)
+            cell = self.ws.cell(row=row, column=16)
             cell.border =  Border(right=Side(border_style='dotted', color='000000'))
-        cell = self.ws.cell(row=10, column=13)
+        cell = self.ws.cell(row=10, column=16)
         cell.border =  Border(bottom=Side(border_style='dotted', color='000000'),right=Side(border_style='dotted', color='000000'))
 
     def set_column_width(self):
@@ -269,10 +270,12 @@ class InitSheet:
         cell_detail_b.alignment = Alignment(horizontal='center', vertical='center')
         cell_est_sold.alignment = Alignment(horizontal='center', vertical='center')
 
-        for i in range(1,13):
-            self.ws.cell(26,i).border = Border(top=Side(style='dotted'))
+        for i in range(1,16):
+            self.ws.cell(26,i).border = Border(top=Side(style='thick'),bottom=Side(style='thick'))
+        self.ws.cell(26,16).border = Border(top=Side(style='thick'), bottom=Side(style='thick'), right=Side(style='thick'))
 
-        self.ws.merge_cells(start_row=26, start_column=1, end_row=26, end_column=13)
+        self.ws.merge_cells(start_row=26, start_column=1, end_row=26, end_column=16)
+        cell_detail_b.fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
         
         cell_detail_b.value = CEB.DETAIL
         cell_detail_b.number_format = f';;;""'
@@ -379,20 +382,7 @@ class InitSheet:
         cell_title_date_ex.value = CET.INIT_TITLE_DATE
         cell_title_date_id.value = CET.INIT_TITLE_DATE
         cell_title_date_re.value = CET.INIT_TITLE_DATE
-
-    def set_protection(self):
-        # protect all the sheet
-        protect_ws(self.ws)
         
-        # # unprotect certain part
-        # cell_val_ex = self.ws.cell(8,2)
-        # unprotect_cell(cell_val_ex)
-        # cell_val_ex = self.ws.cell(8,6)
-        # unprotect_cell(cell_val_ex)
-        
-        unprotect_range(self.ws,11,25,1,13)
-        unprotect_range(self.ws,1,100,14,100)
-    
 if __name__ == "__main__":
     import openpyxl
     from Styles import StyleCell
