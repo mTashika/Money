@@ -1,8 +1,10 @@
 import Const as C
 import Const_Balise_Excel as BE
 from openpyxl.utils import get_column_letter
-from Tools import clear_zone
+from openpyxl.styles import Font
+from Tools import clear_zone,add_excel_comment
 from Protection import set_protection
+import Const_txt_excel as CET
 
 class WriteExtraction():
     def __init__(self,sheet,extraction,markers):
@@ -57,18 +59,25 @@ class WriteExtraction():
             cell_share.style = "style_col1"
     
     def write_validation(self):
-        # estimated
-        self.ws.cell(row=self.mks.b_ext_sold_ed_est[0],column=self.mks.b_ext_sold_ed_est[1]).value = round(self.extraction.sold_est,2)
+        cell_value =  self.ws.cell(row=self.mks.b_ext_sold_ed_est[0],column=self.mks.b_ext_sold_ed_est[1])
         cell_txt_est = self.ws.cell(row=self.mks.b_ext_sold_ed_est[0],column=self.mks.b_ext_sold_ed_est[1]-1)
+        cell_val = self.ws.cell(row=self.mks.b_ext_verif[0],column=self.mks.b_ext_verif[1])
+        # estimated
+        cell_value.value = round(self.extraction.sold_est,2)
         cell_txt_est.value = BE.EXT_VAL
         cell_txt_est.number_format  = f';;;"{C.EXT_VALID_TXT_SOLD_EST}"'
+        # Font
+        cell_value.font = Font(italic=True, color="999999")
+        cell_txt_est.font = Font(italic=True, color="999999")
+
         # validation
-        cell_val = self.ws.cell(row=self.mks.b_ext_verif[0],column=self.mks.b_ext_verif[1])
         cell_val.value = self.extraction.validation
         if cell_val.value:
             cell_val.style = "Good"
         else:
             cell_val.style = "Bad"
+        add_excel_comment(cell_val,CET.NOTE_VALID_PDF)
+            
     
     def write_date(self):
         date = f"{self.extraction.date_st} -> {self.extraction.date_ed}"       

@@ -4,7 +4,10 @@ from datetime import datetime
 from openpyxl.worksheet.datavalidation import DataValidation
 import Const as C
 import Const_txt_excel as CT
-from Const_Balise_Excel import DETAIL,EXT_VAL
+from Const_Balise_Excel import EXT_VAL
+import re
+from openpyxl.comments import Comment
+import subprocess
 
 def month_number_to_name(month_number):
     month_number = int(month_number)
@@ -64,6 +67,7 @@ def clear_zone(ws,minrow,maxrow,mincol,maxcol):
                 cell = ws.cell(row=row, column=col)
                 cell.value = None
                 cell.style = 'Normal'
+                cell.comment = None
 
 def unmerge_cells_by_coords(ws, start_row, start_col, end_row, end_col):
     start_cell = get_column_letter(start_col) + str(start_row)
@@ -105,7 +109,52 @@ def get_current_month():
 def get_current_year():
     return datetime.now().strftime("%Y")
 
+def evaluate_excel_formula(formula: str, ws):
+    """
+    Evaluate a simple Excel formula using values from the worksheet.
+    Only supports basic arithmetic operations (+, -, *, /).
+    """
+    if not formula.startswith("="):
+        try:
+            return float(formula)
+        except ValueError:
+            return formula  # Non-numeric value, return as-is
 
+    # Remove leading '=' and extract cell references (e.g., A1, B2)
+    expression = formula[1:]
+    cell_refs = re.findall(r'[A-Z]+\d+', expression)
+
+    # Replace each cell reference with its actual value from the worksheet
+    for ref in cell_refs:
+        cell_value = ws[ref].value
+        if cell_value is None:
+            cell_value = 0
+        elif isinstance(cell_value, str) and cell_value.startswith("="):
+            # Handle nested formulas recursively
+            cell_value = evaluate_excel_formula(cell_value, ws)
+        expression = expression.replace(ref, str(cell_value))
+
+    try:
+        # Evaluate the final expression safely
+        return eval(expression)
+    except Exception as e:
+        raise ValueError(f"Invalid formula or error during evaluation: {e}")
+
+def add_excel_comment(cell, text: str, author: str = "Auto"):
+    """
+    Add a comment (note) to a given cell in the worksheet.
+    
+    Parameters:
+        cell cell in the worksheet
+        text (str): The content of the comment.
+        author (str): The author of the comment.
+    """
+    comment = Comment(text, author)
+    cell.comment = comment
+
+
+def run_excel_path(file_path):
+    subprocess.run(['start', '', file_path], shell=True)
 
 class FinancialOperation:
     """ Classe used for the data extraction from a PDF. """

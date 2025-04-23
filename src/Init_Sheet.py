@@ -2,6 +2,7 @@ import Const_txt_excel as CET
 import Const_Balise_Excel as CEB
 from openpyxl.styles import Font,Alignment,PatternFill,Side,Border
 from Protection import set_protection
+from Tools import add_excel_comment
 
 FORMAT_COMPTA = "0.00 €"
 
@@ -89,7 +90,10 @@ class InitSheet:
         cell_date_b.number_format = f';;;"{CET.INIT_DATE}"'
         cell_start_b.value = CEB.BILAN_ST_SOLD
         cell_start_b.number_format = f';;;"{CET.INIT_SOLD_ST}"'
-        
+
+        add_excel_comment(cell_date_b,CET.NOTE_DATE)
+        add_excel_comment(cell_start_b,CET.NOTE_SOLD_ST)
+  
     def write_bilan(self):  
         cell_title_b  = self.ws.cell(4,1)
         cell_title_ex = self.ws.cell(4,2)
@@ -97,7 +101,7 @@ class InitSheet:
         cell_val_ex   = self.ws.cell(5,2)
         cell_val_re   = self.ws.cell(5,3)
         cell_valid_b  = self.ws.cell(3,4)
-        cell_valid_note  = self.ws.cell(2,4)
+        # cell_valid_note  = self.ws.cell(2,4)
         
         cell_title_b.font = Font(size=16, bold=True)
         cell_title_ex.font = Font(size=16, bold=True)
@@ -105,7 +109,7 @@ class InitSheet:
         cell_val_ex.font = Font(size=14)
         cell_val_re.font = Font(size=14)
         cell_valid_b.font = Font(size=14)
-        cell_valid_note.font = Font(size=9, color="FFFFFF")
+        # cell_valid_note.font = Font(size=9, color="FFFFFF")
         
         cell_title_b.alignment = Alignment(horizontal='center', vertical='center')
         cell_title_ex.alignment = Alignment(horizontal='center', vertical='center')
@@ -113,7 +117,7 @@ class InitSheet:
         cell_val_ex.alignment = Alignment(horizontal='right', vertical='center')
         cell_val_re.alignment = Alignment(horizontal='right', vertical='center')
         cell_valid_b.alignment = Alignment(horizontal='center', vertical='center')
-        cell_valid_note.alignment = Alignment(horizontal='left', vertical='center')
+        # cell_valid_note.alignment = Alignment(horizontal='left', vertical='center')
         
         cell_val_ex.number_format = FORMAT_COMPTA
         cell_val_re.number_format = FORMAT_COMPTA
@@ -138,12 +142,15 @@ class InitSheet:
         cell_title_b.number_format = f';;;"{CET.INIT_TITLE_BILAN}"'
         cell_valid_b.value = ""
         cell_valid_b.number_format = f';;;"{CET.INIT_VALID}"'
-        cell_valid_note.value = CET.INIT_VALID_TOT_NOTE
+        # cell_valid_note.value = CET.INIT_VALID_TOT_NOTE
         
         
         cell_title_ex.value = CET.INIT_TITLE_EXPECTED
         cell_title_re.value = CET.INIT_TITLE_REAL
         cell_val_ex.value = '=B2+B8+F8'
+
+        add_excel_comment(cell_title_b,CET.NOTE_BILAN)
+        add_excel_comment(cell_valid_b,CET.NOTE_VALID_BILAN)
 
     def write_income(self):
         cell_title_b = self.ws.cell(7,1)
@@ -199,6 +206,10 @@ class InitSheet:
         cell_title_name.value = CET.INIT_TITLE_NAME
         cell_title_ex.value = CET.INIT_TITLE_EXPECTED
         cell_title_re.value = CET.INIT_TITLE_REAL
+
+        add_excel_comment(cell_title_b,CET.NOTE_INCOME)
+        add_excel_comment(cell_title_name,CET.NOTE_INCOME_NAME)
+        add_excel_comment(cell_title_ex,CET.NOTE_INCOME_EX_VAL)
     
     def write_loss(self):
         cell_title_b = self.ws.cell(7,5)
@@ -257,6 +268,10 @@ class InitSheet:
         cell_title_ex.value = CET.INIT_TITLE_EXPECTED
         cell_title_re.value = CET.INIT_TITLE_REAL
 
+        add_excel_comment(cell_title_b,CET.NOTE_LOSS)
+        add_excel_comment(cell_title_name,CET.NOTE_LOSS_NAME)
+        add_excel_comment(cell_title_ex,CET.NOTE_LOSS_EX_VAL)
+
         for i in range(11,26):
             self.ws.merge_cells(start_row=i, start_column=6, end_row=i, end_column=7)
 
@@ -280,6 +295,7 @@ class InitSheet:
         cell_detail_b.value = CEB.DETAIL
         cell_detail_b.number_format = f';;;""'
         cell_est_sold.value = CEB.EXT_VAL
+        cell_est_sold.number_format = f';;;""'
     
     def write_tab(self):
         cell_cat1   = self.ws.cell(27,1)

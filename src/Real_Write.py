@@ -2,7 +2,7 @@ import Const as C
 import Const_txt_excel as CTE
 from Const import REAL_LINE_SPACE,REAL_LINE_SPACE_SIGN,REAL_SPACE_INC_LOSS_2_DETAIL
 from openpyxl.styles import Side, Border,Alignment,Font
-from Tools import clear_zone,generate_table,unmerge_cells_by_coords,check_cell_value
+from Tools import clear_zone,generate_table,unmerge_cells_by_coords,check_cell_value,add_excel_comment
 from Protection import set_protection
 from openpyxl.utils import get_column_letter
 
@@ -13,14 +13,16 @@ class IncomeLoss():
         self.re = re
         
 class WriteRealisation():
-    def __init__(self,ws,mks,realisation_month,realisation_pdf):
+    def __init__(self,ws,mks,realisation_month,realisation_pdf,realisation_intern):
         self.ws = ws
         self.mks = mks
         self.realisation_month = realisation_month
         self.realisation_pdf = realisation_pdf
+        self.realisation_intern = realisation_intern
         self.money_type = '€'
         self.in_list = []
         self.los_list = []
+        self.last_row_print_pdf = 0
 
         self.unmerge_loss()
         self.get_income_loss()
@@ -33,6 +35,7 @@ class WriteRealisation():
         self.print_tot()
         self.print_cat("Monthly")
         self.print_cat("Pdf")
+        self.print_cat("Intern")
         set_protection(self.ws)
         # self.set_protection()
 
@@ -80,10 +83,10 @@ class WriteRealisation():
         self.mks.B_los_ed_line = self.mks.B_LOS_IN_ST_LINE
             
     def print_tot(self):
-        # total name and title
+        # Total name and title
         r1 = self.mks.B_DETAIL_LINE_ST
         c1 = self.mks.B_REAL_COL_ST
-        # total
+        # Total
         self.ws.cell(r1,c1).value   = CTE.REAL_TOT_TITLE_MONTHLY
         self.ws.cell(r1,c1+1).value = CTE.REAL_TOT
         self.ws.cell(r1,c1+2).value = CTE.REAL_TOT_EXP
@@ -101,7 +104,7 @@ class WriteRealisation():
         self.ws.cell(r1,c1+6).style = s
         self.ws.cell(r1,c1+7).style = s
         self.ws.cell(r1,c1+8).style = s
-        # total value
+        # Total value
         self.ws.cell(r1+1,c1+1).value = self.realisation_month.tot
         self.ws.cell(r1+1,c1+2).value = self.realisation_month.tot_ex
         self.ws.cell(r1+1,c1+3).value = self.realisation_month.tot_inc
@@ -115,7 +118,7 @@ class WriteRealisation():
         self.ws.cell(r1+1,c1+6).style = s
         self.ws.cell(r1+1,c1+7).style = s
         self.ws.cell(r1+1,c1+8).style = s
-        # font
+        # Font
         self.ws.cell(r1,c1).font = Font(size=14, bold=True)
         self.ws.cell(r1,c1+1).font = Font(size=12, bold=True)
         self.ws.cell(r1,c1+2).font = Font(size=12, bold=True)
@@ -125,10 +128,10 @@ class WriteRealisation():
         self.ws.cell(r1,c1+6).font = Font(size=12, bold=True)
         self.ws.cell(r1,c1+7).font = Font(size=12, bold=True)
         self.ws.cell(r1,c1+8).font = Font(size=12, bold=True)
-        # merge
+        # Merge
         self.ws.merge_cells(start_row=r1, start_column=c1, end_row=r1+1, end_column=c1)
         self.ws.merge_cells(start_row=r1, start_column=c1+5, end_row=r1+1, end_column=c1+5)
-        # total border
+        # Total border
         self.ws.cell(r1,c1).border     = Border(left=Side(style='thick'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thin'))
         self.ws.cell(r1,c1+1).border   = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thin'))
         self.ws.cell(r1,c1+2).border   = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thick'),bottom=Side(style='thin'))
@@ -137,16 +140,59 @@ class WriteRealisation():
         self.ws.cell(r1+1,c1+1).border = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thin'),bottom=Side(style='thick'))
         self.ws.cell(r1+1,c1+2).border = Border(left=Side(style='thin'),right=Side(style='thin'),top=Side(style='thin'),bottom=Side(style='thick'))
         self.ws.cell(r1+1,c1+3).border = Border(left=Side(style='thin'),right=Side(style='thick'),top=Side(style='thin'),bottom=Side(style='thick'))
+
+        # Comment
+        add_excel_comment(self.ws.cell(r1,c1),CTE.NOTE_MONTHLY)
+        add_excel_comment(self.ws.cell(r1,c1+5),CTE.NOTE_PDF)
     
+    def print_tot_intern(self):
+        # total name and title
+        r1 = self.last_row_print_pdf
+        c1 = self.mks.B_REAL_COL_ST + 5
+        # total
+        self.ws.cell(r1,c1).value   = CTE.REAL_TOT_TITLE_INTERN
+        self.ws.cell(r1,c1+1).value = CTE.REAL_TOT_INTERN
+        self.ws.cell(r1,c1+2).value = CTE.REAL_TOT_EXP_INTERN
+        self.ws.cell(r1,c1+3).value = CTE.REAL_TOT_INC_INTERN
+        
+        s = "style_title"
+        self.ws.cell(r1,c1).style   = s
+        self.ws.cell(r1,c1+1).style = s
+        self.ws.cell(r1,c1+2).style = s
+        self.ws.cell(r1,c1+3).style = s
+        # total value
+        self.ws.cell(r1+1,c1+1).value = self.realisation_intern.tot
+        self.ws.cell(r1+1,c1+2).value = self.realisation_intern.tot_ex
+        self.ws.cell(r1+1,c1+3).value = self.realisation_intern.tot_inc
+        s = "style_title_val"
+        self.ws.cell(r1+1,c1+1).style = s
+        self.ws.cell(r1+1,c1+2).style = s
+        self.ws.cell(r1+1,c1+3).style = s
+        # font
+        self.ws.cell(r1,c1).font = Font(size=14, bold=True)
+        self.ws.cell(r1,c1+1).font = Font(size=12, bold=True)
+        self.ws.cell(r1,c1+2).font = Font(size=12, bold=True)
+        self.ws.cell(r1,c1+3).font = Font(size=12, bold=True)
+        # merge
+        self.ws.merge_cells(start_row=r1, start_column=c1, end_row=r1+1, end_column=c1)
+
+        add_excel_comment(self.ws.cell(r1,c1),CTE.NOTE_INTERN)
+
+        self.last_row_print_pdf += 2
+
     def print_cat(self, cat_type):
         if cat_type == "Monthly":
             c1 = self.mks.B_REAL_COL_ST
             row_c = self.mks.B_DETAIL_LINE_ST + 3
             real = self.realisation_month
-        else:
+        elif cat_type == "Pdf":
             c1 = self.mks.B_REAL_COL_ST + 5
             row_c = self.mks.B_DETAIL_LINE_ST + 3
             real = self.realisation_pdf
+        else:
+            c1 = self.mks.B_REAL_COL_ST + 5
+            row_c = self.last_row_print_pdf if self.last_row_print_pdf > 0 else self.mks.B_DETAIL_LINE_ST + 3
+            real = self.realisation_intern
 
         round_p = 2
         style_cat2 = "style_cat2"
@@ -202,6 +248,9 @@ class WriteRealisation():
                             end_row=row_c, end_column=c1)
             
             row_c += 1 + REAL_LINE_SPACE
+        if cat_type == "Pdf":
+            self.last_row_print_pdf = row_c + 1
+            self.print_tot_intern()
 
     def print_real_income(self):
         # Add the real income in the incom tab (add a new line if the expected does not exist)

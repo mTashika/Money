@@ -85,8 +85,8 @@ class ManageExcelFile:
         except Exception as e:
             raise Exception(f"Une erreur s'est produite: {e}")
         
-    def get_wb_ws(self):
-        return self.wb,self.ws
+    def get_wb_ws_fpath(self):
+        return self.wb,self.ws,self.file_path
     
     def save_wb(self):
         if self.wb_valid and self.ws_valid:

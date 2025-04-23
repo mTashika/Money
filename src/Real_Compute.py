@@ -1,5 +1,5 @@
 import Const as C
-from Tools import check_cell_value
+from Tools import check_cell_value,evaluate_excel_formula
 
 class DataRealisation():
     def __init__(self,cat1,cat2,fo_type,refund,name,value):
@@ -38,7 +38,7 @@ class MonthRealisation():
         self.cat_diff_signs()
         self.create_cats1()
         self.sort_cats1()
-        # delet attribut
+        # delete attribut
         del self.ws, self.mks
         
 
@@ -50,8 +50,13 @@ class MonthRealisation():
                 cat2 = self.ws.cell(row=i, column=self.mks.B_ID_C2_COL).value
                 fo_type = self.ws.cell(row=i, column=self.mks.B_ID_TYPE_COL).value
                 refund = self.ws.cell(row=i, column=self.mks.B_ID_REFUND_COL).value
+                if check_cell_value(refund) == 0:
+                    refund = evaluate_excel_formula(refund,self.ws)
+                    if check_cell_value(refund) not in [1,2]:
+                        refund = None
                 name = self.ws.cell(row=i, column=self.mks.B_EXT_NAME_COL).value
                 val = self.ws.cell(row=i, column=self.mks.B_EXT_VALUE_COL).value
+
                 data_line = DataRealisation(cat1,cat2,fo_type,refund,name,val)
                 self.line_real.append(data_line)
         self.sold_st_month_pdf = self.ws.cell(row=self.mks.B_BILAN_ST_SOLD[0], column=self.mks.B_BILAN_ST_SOLD[1]).value
@@ -61,8 +66,12 @@ class MonthRealisation():
             self.line_real = [l for l in self.line_real if l.fo_type == C.VALID_MONTHLY]
             for l in self.line_real:
                 l.value += l.refund
-        if self.real_type == "Pdf":
+
+        elif self.real_type == "Pdf":
             self.line_real = [l for l in self.line_real if (l.fo_type == C.VALID_MONTHLY or l.fo_type == C.VALID_DEFFERED)]
+
+        elif self.real_type == "Intern":
+            self.line_real = [l for l in self.line_real if (l.fo_type == C.VALID_INTERN)]
 
     def update_tot(self):
         """ Compute the total """

@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import os
 from tkinter import filedialog,messagebox,PhotoImage,Entry
-from Tools import center_window,normalize_string,get_current_month,get_current_year,set_all_data_validation
+from Tools import center_window,normalize_string,get_current_month,get_current_year,set_all_data_validation,run_excel_path
 from openpyxl import load_workbook
 from Ext_PDF_extraction import PDFExtraction
 from Manage_excel_file import ManageExcelFile
@@ -49,7 +49,7 @@ class App(ctk.CTk):
 
         # Variables pour stocker les chemins
         self.pdf_path = ctk.StringVar(value="")
-        self.excel_dir_path = ctk.StringVar(value="C:/Users/mcast/OneDrive/Bureau")
+        self.excel_dir_path = ctk.StringVar(value=r"C:\Users\mcast\OneDrive\Documents\.Perso\[4] Finance\Compte\Fiche")
         self.year_var = ctk.StringVar(value=get_current_year())
         self.year_var.trace_add("write", self.update_combo_box)
         self.month_var = ctk.StringVar(value=get_current_month())
@@ -309,8 +309,7 @@ class App(ctk.CTk):
         if (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == 0 and
                                     self.checkbox_extract_var.get() == CHECK_EXTRACT): # Extraction (Create)
             self.show_loading()
-            t = threading.Thread(target=self.launch_creation_extraction).start()
-            t.join()
+            threading.Thread(target=self.launch_creation_extraction).start()
         elif (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == CHECK_CREATE and
                                     self.checkbox_extract_var.get() == 0): # Create
             self.show_loading()
@@ -342,9 +341,9 @@ class App(ctk.CTk):
         
     def launch_creation_extraction(self):
         file_paths_list = [path.strip() for path in self.pdf_path.get().split(';')]
-        for path_excel in file_paths_list:
+        for path_pdf in file_paths_list:
             self.is_paused = False
-            extraction = PDFExtraction(path_excel)
+            extraction = PDFExtraction(path_pdf)
             self.year = normalize_string(extraction.year)
             self.month = normalize_string(extraction.month)
             self.manage_excel_file("Extraction")
@@ -369,6 +368,8 @@ class App(ctk.CTk):
                 messagebox.showerror("Error", f"ERROR during Extraction for {self.managment.ws_name}!")
         self.after(0, self.hide_loading)
         self.wb.close()
+        run_excel_path(self.file_path)
+        return self.ws
 
     def launch_realisation(self):
         self.is_paused = False
@@ -384,7 +385,8 @@ class App(ctk.CTk):
                     mks = SheetMarker(self.ws)
                     realisation_month = MonthRealisation(self.ws,mks,"Monthly")
                     realisation_pdf = MonthRealisation(self.ws,mks,"Pdf")
-                    WriteRealisation(self.ws,mks,realisation_month,realisation_pdf)
+                    realisation_intern = MonthRealisation(self.ws,mks,"Intern")
+                    WriteRealisation(self.ws,mks,realisation_month,realisation_pdf,realisation_intern)
                     Valid(self.ws,mks)
                     set_all_data_validation(self.wb,mks)
                     is_save_ok = self.managment.save_wb()
@@ -392,6 +394,7 @@ class App(ctk.CTk):
                     self.after(0, self.hide_loading)
                     messagebox.showinfo("Success", f"Operation completed successfully for {self.managment.ws_name}!") if is_save_ok else None
                     self.wb.close()
+                    run_excel_path(self.file_path)
             else:
                 self.after(0, self.hide_loading)
                 messagebox.showinfo("Info", f"Create the sheet {self.month} before")
@@ -401,7 +404,7 @@ class App(ctk.CTk):
         
     def manage_excel_file(self,man_type):
         self.managment = ManageExcelFile(self.excel_dir_path.get(),self.year,self.month,man_type)
-        self.wb,self.ws = self.managment.get_wb_ws()
+        self.wb,self.ws,self.file_path = self.managment.get_wb_ws_fpath()
 
     def show_loading(self):
         self.loading_label.pack(padx=10,pady=10)
