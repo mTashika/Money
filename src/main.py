@@ -1,7 +1,8 @@
 import customtkinter as ctk
+import tkinter as tk
 import os
 from tkinter import filedialog,messagebox,PhotoImage,Entry
-from Tools import center_window,normalize_string,get_current_month,get_current_year,set_all_data_validation,run_excel_path
+from Tools import normalize_string,get_current_month,get_current_year,set_all_data_validation,run_excel_path
 from openpyxl import load_workbook
 from Ext_PDF_extraction import PDFExtraction
 from Manage_excel_file import ManageExcelFile
@@ -15,6 +16,7 @@ from Validation import Valid
 import threading
 from PIL import Image, ImageTk
 import sys
+from Init_App import App
 
 CHECK_CREATE = 1
 CHECK_EXTRACT = 2
@@ -29,24 +31,15 @@ def ressource_path(rel_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path,rel_path)
         
-class App(ctk.CTk):
+class Main():
     def __init__(self):
+        self.App = App()
         self.asset_path = ressource_path('asset')        
         self.wb, self.ws = None, None
         self.excel_file_path = None
         self.year, self.month = None, None
         self.managment = None
         
-        super().__init__()
-        ctk.set_appearance_mode("System")  # Modes: "System" (default), "Dark", "Light"
-        ctk.set_default_color_theme("blue")  # Thèmes: "blue" (default), "dark-blue", "green"
-
-        # Configurer la fenêtre
-        self.title("Money")
-
-        # Centrer la fenêtre sur l'écran
-        center_window(self,800, 535)
-
         # Variables pour stocker les chemins
         self.pdf_path = ctk.StringVar(value="")
         self.excel_dir_path = ctk.StringVar(value=r"C:\Users\mcast\OneDrive\Documents\.Perso\[4] Finance\Compte\Fiche")
@@ -58,153 +51,77 @@ class App(ctk.CTk):
         self.checkbox_create_var = ctk.IntVar()
         self.year_create = ctk.StringVar(value=get_current_year())
         self.month_create = ctk.StringVar(value=get_current_month())
-        
 
-        # Relier la fermeture par la croix à la fonction annuler
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-        self.bind("<Button-3>", self.remove_focus)
-        self.bind("<Button-1>", self.remove_focus)
-        
-        frame_excel = ctk.CTkFrame(self,fg_color='transparent')
-        frame_choice = ctk.CTkFrame(self,fg_color='transparent')
-        frame_ok_cancel = ctk.CTkFrame(self,fg_color='transparent')
-        frame_excel.pack(pady=(0,15))
-        frame_choice.pack()
-        frame_ok_cancel.pack(pady=(25,0))
-        frame_loading = ctk.CTkFrame(self,fg_color='transparent',width=0, height=0)
-        frame_loading.place(relx=0,rely=1,anchor='sw')
-        
-        frame_left = ctk.CTkFrame(frame_choice)
-        frame_choice_extract = ctk.CTkFrame(frame_left,fg_color='transparent')
-        frame_choice_create = ctk.CTkFrame(frame_left,fg_color='transparent')
-        frame_choice_update = ctk.CTkFrame(frame_choice)
-        frame_left.pack(side='left',anchor='center',padx=10)
-        frame_choice_update.pack(side='right',anchor='center',padx=10)
-        frame_choice_extract.pack()
-        frame_choice_create.pack()
-        
-        WIDTH = 350
-        # frame excel
-        self.label_excel_dir = ctk.CTkLabel(frame_excel, text="Chemin du dossier Excel:",font=("Arial", 17))
-        self.label_excel_dir.pack(pady=(20, 0), padx=20, anchor='w')
-        self.entry_excel_dir = ctk.CTkEntry(frame_excel, textvariable=self.excel_dir_path, width=475)
-        self.entry_excel_dir.pack(pady=10, padx=20, anchor='w')
-        self.button_browse_excel_dir = ctk.CTkButton(frame_excel, text="Browse", command=self.browse_excel_dir,
-                                                        width=80,height=40,font=("Arial", 17))
-        self.button_browse_excel_dir.pack(pady=(5,10), padx=20, anchor='e')
-        
-        # frame_choice_extract
-        self.label_extract_title = ctk.CTkLabel(frame_choice_extract, text="Extraction",font=("Arial", 30,'bold'))
-        self.label_extract_title.pack(pady=(10, 0), padx=20, anchor='w',fill='both')
-        
-        self.entry_pdf = ctk.CTkEntry(frame_choice_extract, textvariable=self.pdf_path, width=WIDTH,placeholder_text="PDF Path")
-        self.entry_pdf.pack(pady=10, padx=20, anchor='w')
-        self.button_browse_pdf = ctk.CTkButton(frame_choice_extract, text="Browse", command=self.browse_pdf,
-                                                width=80,height=40,font=("Arial", 15))
-        self.button_browse_pdf.pack(pady=(5,0), padx=20, anchor='e')
-        
-        self.checkbox_extract = ctk.CTkCheckBox(frame_choice_extract, text='', variable=self.checkbox_extract_var, onvalue=CHECK_EXTRACT, offvalue=0,command=lambda: self.on_checkbox_toggle(self.checkbox_extract_var))
-        self.checkbox_extract.place(relx=0.96,rely=0.12,anchor='ne')
-        
-        # frame_choice_create
-        frame_choice_create_ym = ctk.CTkFrame(frame_choice_create,fg_color='transparent')
-        self.label_create_title = ctk.CTkLabel(frame_choice_create, text="Create",font=("Arial", 30,'bold'))
-        self.label_create_title.pack(pady=(15, 0), padx=20,fill='both')
-        frame_choice_create_ym.pack(pady=(20, 0),padx=20,fill='both')
-        
-        self.label_year_create = ctk.CTkLabel(frame_choice_create_ym, text="Year",font=("Arial", 17))
-        self.label_year_create.pack(pady=(10, 5),padx=(20,7), side='left',anchor='n')
-        self.entry_year_create = ctk.CTkEntry(frame_choice_create_ym, textvariable=self.year_create, width=WIDTH/5)
-        self.entry_year_create.pack(pady=10, side='left',anchor='n')
-        self.label_month_create = ctk.CTkLabel(frame_choice_create_ym, text="Month",font=("Arial", 17))
-        self.label_month_create.pack(pady=(10, 5),padx=(30,7), side='left',anchor='n')
-        self.entry_month_create = ctk.CTkComboBox(frame_choice_create_ym, variable=self.month_create, width=WIDTH/3.3,values=MONTH_FR)
-        self.entry_month_create.pack(pady=10, side='left',anchor='n')
-        
-        self.checkbox_create = ctk.CTkCheckBox(frame_choice_create, text='', variable=self.checkbox_create_var, onvalue=CHECK_CREATE, offvalue=0,command=lambda: self.on_checkbox_toggle(self.checkbox_create_var))
-        self.checkbox_create.place(relx=0.93,rely=0.19,anchor='ne')
-        
-        # frame_choice_update
-        self.label_update_title = ctk.CTkLabel(frame_choice_update, text="Update",font=("Arial", 30,'bold'))
-        self.label_update_title.pack(pady=(20, 0), padx=20, anchor='w',fill='both')
-        
-        self.label_year = ctk.CTkLabel(frame_choice_update, text="Year",font=("Arial", 17,'bold'))
-        self.label_year.pack(pady=(20, 0), padx=20, anchor='w')
-        self.entry_year = ctk.CTkEntry(frame_choice_update, textvariable=self.year_var, width=WIDTH)
-        self.entry_year.pack(pady=10, padx=20, anchor='w')
-        self.label_month = ctk.CTkLabel(frame_choice_update, text="Month",font=("Arial", 17,'bold'))
-        self.label_month.pack(pady=(20, 0), padx=20, anchor='w')
-        
-        self.entry_month = ctk.CTkComboBox(frame_choice_update, variable=self.month_var, width=WIDTH,values=[''])
-        self.entry_month.pack(pady=(10,20), padx=20, anchor='w')
-        
-        self.checkbox_update = ctk.CTkCheckBox(frame_choice_update, text='', variable=self.checkbox_update_var, onvalue=CHECK_UPDATE, offvalue=0,command=lambda: self.on_checkbox_toggle(self.checkbox_update_var))
-        self.checkbox_update.place(relx=0.928,rely=0.1,anchor='ne')
+
+        self.App.entry_excel_dir.configure(textvariable=self.excel_dir_path)
+        self.App.button_browse_excel_dir.configure(command=self.browse_excel_dir)
+        self.App.entry_pdf.configure(textvariable=self.pdf_path)
+        self.App.button_browse_pdf.configure(command=self.browse_pdf)
+        self.App.checkbox_extract.configure(variable=self.checkbox_extract_var, onvalue=CHECK_EXTRACT, offvalue=0,
+                                            command=lambda: self.on_checkbox_toggle(self.checkbox_extract_var))
+        self.App.entry_year_create.configure(textvariable=self.year_create)
+        self.App.entry_month_create.configure(variable=self.month_create,values=MONTH_FR)
+        self.App.checkbox_create.configure(variable=self.checkbox_create_var, onvalue=CHECK_CREATE, offvalue=0,
+                                           command=lambda: self.on_checkbox_toggle(self.checkbox_create_var))
+        self.App.entry_year.configure(textvariable=self.year_var)
+        self.App.entry_month.configure(variable=self.month_var)
+        self.App.checkbox_update.configure(variable=self.checkbox_update_var, onvalue=CHECK_UPDATE, offvalue=0,
+                                           command=lambda: self.on_checkbox_toggle(self.checkbox_update_var))
         self.on_checkbox_toggle(self.checkbox_extract_var)
-        
-        icon_photo = PhotoImage(file=os.path.join(self.asset_path,'folder.png'))
-        icon_photo = icon_photo.subsample(2)  # Diviser par 2, ajustez selon vos besoins
-        self.button_free = ctk.CTkButton(self, text="", command=self.free_year_wb,image=icon_photo,width=50,height=40)
-        self.button_free.place(relx=0.03,rely=0.03,anchor='nw')
-        
-        # Boutons OK et Annuler
-        self.button_ok = ctk.CTkButton(frame_ok_cancel, text="OK", command=self.ok,width=80,height=40,font=("Arial", 17, "bold"))
-        self.button_ok.pack(side="right", padx=20, pady=(25,0))
 
-        self.button_cancel = ctk.CTkButton(frame_ok_cancel, text="Cancel", command=self.cancel,width=80,height=40,font=("Arial", 17, "bold"))
-        self.button_cancel.pack(side="left", padx=10, pady=(25,0))
-        
-        # GIF
+        self.App.button_ok.configure(command=self.ok)
+        self.App.button_cancel.configure(command=self.cancel)
+        self.App.close_button.configure(command=self.cancel)
+        self.App.settings_button.configure(command=self.open_settings)
+        self.App.help_button.configure(command=self.open_help)
+
         self.gif = Image.open(os.path.join(self.asset_path,'loading_gif.gif'))
         self.init_gif()
-        self.loading_label = ctk.CTkLabel(frame_loading,text='')
-        
-        
-    
+
     def disable_update(self):
-        self.label_update_title.configure(text_color=GREY)
-        self.label_year.configure(text_color=GREY)
-        self.entry_year.configure(state="disabled",text_color=GREY)
-        self.label_month.configure(text_color=GREY)
-        self.entry_month.configure(state="disabled",text_color=GREY)
-        self.checkbox_update.configure(state="normal")
-        self.checkbox_update_var.set(0)
+       self.App.label_update_title.configure(text_color=GREY)
+       self.App.label_year.configure(text_color=GREY)
+       self.App.entry_year.configure(state="disabled",text_color=GREY)
+       self.App.label_month.configure(text_color=GREY)
+       self.App.entry_month.configure(state="disabled",text_color=GREY)
+       self.App.checkbox_update.configure(state="normal")
+       self.checkbox_update_var.set(0)
     def enable_update(self):
-        self.label_update_title.configure(text_color=WHITE)
-        self.label_year.configure(state="normal",text_color=WHITE)
-        self.entry_year.configure(state="normal",text_color=WHITE)
-        self.label_month.configure(state="normal",text_color=WHITE)
-        self.entry_month.configure(state="normal",text_color=WHITE)
-        self.checkbox_update.configure(state="normal")
+        self.App.label_update_title.configure(text_color=WHITE)
+        self.App.label_year.configure(state="normal",text_color=WHITE)
+        self.App.entry_year.configure(state="normal",text_color=WHITE)
+        self.App.label_month.configure(state="normal",text_color=WHITE)
+        self.App.entry_month.configure(state="normal",text_color=WHITE)
+        self.App.checkbox_update.configure(state="normal")
         self.checkbox_update_var.set(CHECK_UPDATE)
     def disable_create(self):
-        self.label_create_title.configure(text_color=GREY)
-        self.label_year_create.configure(text_color=GREY)
-        self.entry_year_create.configure(state="disabled",text_color=GREY)
-        self.label_month_create.configure(text_color=GREY)
-        self.entry_month_create.configure(state="disabled",text_color=GREY)
-        self.checkbox_create.configure(state="normal")
-        self.checkbox_create_var.set(0)
+       self.App.label_create_title.configure(text_color=GREY)
+       self.App.label_year_create.configure(text_color=GREY)
+       self.App.entry_year_create.configure(state="disabled",text_color=GREY)
+       self.App.label_month_create.configure(text_color=GREY)
+       self.App.entry_month_create.configure(state="disabled",text_color=GREY)
+       self.App.checkbox_create.configure(state="normal")
+       self.checkbox_create_var.set(0)
     def enable_create(self):
-        self.label_create_title.configure(text_color=WHITE)
-        self.label_year_create.configure(state="normal",text_color=WHITE)
-        self.entry_year_create.configure(state="normal",text_color=WHITE)
-        self.label_month_create.configure(state="normal",text_color=WHITE)
-        self.entry_month_create.configure(state="normal",text_color=WHITE)
-        self.checkbox_create.configure(state="normal")
+        self.App.label_create_title.configure(text_color=WHITE)
+        self.App.label_year_create.configure(state="normal",text_color=WHITE)
+        self.App.entry_year_create.configure(state="normal",text_color=WHITE)
+        self.App.label_month_create.configure(state="normal",text_color=WHITE)
+        self.App.entry_month_create.configure(state="normal",text_color=WHITE)
+        self.App.checkbox_create.configure(state="normal")
         self.checkbox_create_var.set(CHECK_CREATE)
     
     def disable_extract(self):
-        self.label_extract_title.configure(text_color=GREY)
-        self.entry_pdf.configure(state="disabled",text_color=GREY)
-        self.button_browse_pdf.configure(state="disabled")
-        self.checkbox_extract.configure(state="normal")
+        self.App.label_extract_title.configure(text_color=GREY)
+        self.App.entry_pdf.configure(state="disabled",text_color=GREY)
+        self.App.button_browse_pdf.configure(state="disabled")
+        self.App.checkbox_extract.configure(state="normal")
         self.checkbox_extract_var.set(0)
     def enable_extract(self):
-        self.label_extract_title.configure(text_color=WHITE)
-        self.entry_pdf.configure(state="normal",text_color=WHITE)
-        self.button_browse_pdf.configure(state="normal")
-        self.checkbox_extract.configure(state="normal")
+        self.App.label_extract_title.configure(text_color=WHITE)
+        self.App.entry_pdf.configure(state="normal",text_color=WHITE)
+        self.App.button_browse_pdf.configure(state="normal")
+        self.App.checkbox_extract.configure(state="normal")
         self.checkbox_extract_var.set(CHECK_EXTRACT)
     
     def glob_enable_extract(self):
@@ -223,15 +140,14 @@ class App(ctk.CTk):
         self.disable_create()
         self.update()
 
-        
     def disable_excel(self):
-        self.label_excel_dir.configure(text_color=GREY)
-        self.entry_excel_dir.configure(state="disabled",text_color=GREY)
-        self.button_browse_excel_dir.configure(state="disabled")
+        self.App.label_excel_dir.configure(text_color=GREY)
+        self.App.entry_excel_dir.configure(state="disabled",text_color=GREY)
+        self.App.button_browse_excel_dir.configure(state="disabled")
     def enable_excel(self):
-        self.label_excel_dir.configure(text_color=WHITE)
-        self.entry_excel_dir.configure(state="normal",text_color=WHITE)
-        self.button_browse_excel_dir.configure(state="normal")
+        self.App.label_excel_dir.configure(text_color=WHITE)
+        self.App.entry_excel_dir.configure(state="normal",text_color=WHITE)
+        self.App.button_browse_excel_dir.configure(state="normal")
         
     def init_gif(self):
         self.frames = []
@@ -239,22 +155,28 @@ class App(ctk.CTk):
         try:
             while True:
                 # Convertir chaque frame en RGBA pour gérer la transparence
-                frame = self.gif.convert("RGBA")
+                frame = self.App.gif.convert("RGBA")
                 # Redimensionner la frame
                 frame = frame.resize(target_size)
                 self.frames.append(ImageTk.PhotoImage(frame))
-                self.gif.seek(len(self.frames))  # Passer à la prochaine frame
+                self.App.gif.seek(len(self.frames))  # Passer à la prochaine frame
         except EOFError:
             pass  # Fin du GIF
         self.loading_index = 0  # Initialiser l'index de frame
         self.is_paused = False
+    def cancel(self):
+        self.App.destroy()
     
     
-    def remove_focus(self,event):
-        if  not isinstance(event.widget,Entry):
-            self.focus_set()
+
     
     ########## COMMAND ##########
+    def open_settings(self):
+        print("Settings selected")
+
+    def open_help(self):
+        print("Help selected")
+
     def browse_pdf(self):
         file_paths = filedialog.askopenfilenames(title="Sélectionner un fichier PDF", filetypes=[("PDF Files", "*.pdf")])
         if file_paths:
@@ -288,7 +210,7 @@ class App(ctk.CTk):
         
     def update_combo_box(self, *args):
         sheet_names = self.get_existing_sheet_from_year()
-        self.entry_month.configure(values=sheet_names)
+        self.App.entry_month.configure(values=sheet_names)
         
     def on_checkbox_toggle(self, checkbox_var):
     # Check if the event was triggered by the "Extract" checkbox
@@ -302,8 +224,7 @@ class App(ctk.CTk):
                 self.glob_enable_update()
                 self.update_combo_box()
                 
-    def cancel(self):
-        self.destroy()
+
 
     def ok(self):
         if (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == 0 and
@@ -407,8 +328,8 @@ class App(ctk.CTk):
         self.wb,self.ws,self.file_path = self.managment.get_wb_ws_fpath()
 
     def show_loading(self):
-        self.loading_label.pack(padx=10,pady=10)
-        self.loading_label.configure(image= self.frames[self.loading_index])
+        self.App.loading_label.pack(padx=10,pady=10)
+        self.App.loading_label.configure(image= self.frames[self.loading_index])
         self.update()
         self.animate_gif()
         self.disable_excel()
@@ -416,7 +337,7 @@ class App(ctk.CTk):
         self.disable_extract()
         
     def hide_loading(self):
-        self.loading_label.pack_forget()
+        self.App.loading_label.pack_forget()
         self.enable_excel()
         if self.checkbox_update_var.get() == CHECK_UPDATE:
             self.glob_enable_update()
@@ -426,7 +347,7 @@ class App(ctk.CTk):
     def animate_gif(self):
             if not self.is_paused:
                 frame = self.frames[self.loading_index]  # Obtenir la frame courante
-                self.loading_label.configure(image=frame)  # Mettre à jour l'image du label
+                self.App.loading_label.configure(image=frame)  # Mettre à jour l'image du label
                 self.update()
                 self.loading_index = (self.loading_index + 1) % len(self.frames)  # Passer à la frame suivante
             # Reprogrammer pour afficher la prochaine frame
@@ -434,5 +355,5 @@ class App(ctk.CTk):
 
 
 if __name__ == "__main__":
-    app = App()
+    app = Main()
     app.mainloop()

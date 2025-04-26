@@ -91,18 +91,6 @@ def normalize_string(input_str):
     # Remove accents
     normalized_str = remove_accent(lower_str)
     return normalized_str
-
-def center_window(win, width, height):
-        # Obtenir la taille de l'écran
-        screen_width = win.winfo_screenwidth()
-        screen_height = win.winfo_screenheight()
-
-        # Calculer les coordonnées x et y pour centrer la fenêtre
-        x = (screen_width - width) // 2
-        y = (screen_height - height) // 2
-
-        # Définir la taille et la position de la fenêtre
-        win.geometry(f"{width}x{height}+{x}+{y}")
         
 def get_current_month():
     return datetime.now().strftime("%B")
