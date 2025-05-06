@@ -1,2 +1,17 @@
-exemple.xlsx
-exemple2.xlsx
+# Ignorer l'environnement virtuel
+venv/
+
+# Ignorer les fichiers et répertoires spécifiques à Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignorer les fichiers spécifiques aux IDE (exemple avec VSCode)
+.vscode/
+
+# Ignorer les fichiers d'installation
+*.log
+*.sqlite3
+
+# Ignorer les fichiers de configuration de l'environnement
+*.env

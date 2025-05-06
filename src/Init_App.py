@@ -172,13 +172,6 @@ class App(ctk.CTk):
         new_y = self.start_y + delta_y
         self.geometry(f'+{new_x}+{new_y}')
 
-
-    def minimize_window(self):
-        """Minimizes the window to the taskbar."""
-        self.update_idletasks()
-        self.overrideredirect(False)  # Temporarily remove custom titlebar
-        self.iconify()
-
     def open_settings(self):
         """Placeholder for settings functionality."""
         print("Settings selected")

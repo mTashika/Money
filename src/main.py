@@ -57,21 +57,25 @@ class Main():
         self.App.button_browse_excel_dir.configure(command=self.browse_excel_dir)
         self.App.entry_pdf.configure(textvariable=self.pdf_path)
         self.App.button_browse_pdf.configure(command=self.browse_pdf)
-        self.App.checkbox_extract.configure(variable=self.checkbox_extract_var, onvalue=CHECK_EXTRACT, offvalue=0,
-                                            command=lambda: self.on_checkbox_toggle(self.checkbox_extract_var))
+        self.App.checkbox_extract.configure(variable=self.checkbox_extract_var,command=lambda: self.on_checkbox_toggle(self.checkbox_extract_var))
+        self.App.checkbox_extract.onvalue = CHECK_EXTRACT
+        self.App.checkbox_extract.offvalue = 0
         self.App.entry_year_create.configure(textvariable=self.year_create)
         self.App.entry_month_create.configure(variable=self.month_create,values=MONTH_FR)
-        self.App.checkbox_create.configure(variable=self.checkbox_create_var, onvalue=CHECK_CREATE, offvalue=0,
-                                           command=lambda: self.on_checkbox_toggle(self.checkbox_create_var))
+        self.App.checkbox_create.configure(variable=self.checkbox_create_var,command=lambda: self.on_checkbox_toggle(self.checkbox_create_var))
+        self.App.checkbox_create.onvalue = CHECK_CREATE
+        self.App.checkbox_create.offvalue = 0
         self.App.entry_year.configure(textvariable=self.year_var)
         self.App.entry_month.configure(variable=self.month_var)
-        self.App.checkbox_update.configure(variable=self.checkbox_update_var, onvalue=CHECK_UPDATE, offvalue=0,
-                                           command=lambda: self.on_checkbox_toggle(self.checkbox_update_var))
+        self.App.checkbox_update.configure(variable=self.checkbox_update_var,command=lambda: self.on_checkbox_toggle(self.checkbox_update_var))
+        self.App.checkbox_update.onvalue = CHECK_UPDATE
+        self.App.checkbox_update.offvalue = 0
         self.on_checkbox_toggle(self.checkbox_extract_var)
 
         self.App.button_ok.configure(command=self.ok)
         self.App.button_cancel.configure(command=self.cancel)
         self.App.close_button.configure(command=self.cancel)
+
         self.App.settings_button.configure(command=self.open_settings)
         self.App.help_button.configure(command=self.open_help)
 
