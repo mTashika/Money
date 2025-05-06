@@ -17,10 +17,8 @@ import threading
 from PIL import Image, ImageTk
 import sys
 from Init_App import App
+import time
 
-CHECK_CREATE = 1
-CHECK_EXTRACT = 2
-CHECK_UPDATE = 3
 GREY = "#999999"
 WHITE = "white"
 
@@ -39,6 +37,8 @@ class Main():
         self.excel_file_path = None
         self.year, self.month = None, None
         self.managment = None
+        self.is_processing = False
+        self.running_thread = False
         
         # Variables pour stocker les chemins
         self.pdf_path = ctk.StringVar(value="")
@@ -58,18 +58,12 @@ class Main():
         self.App.entry_pdf.configure(textvariable=self.pdf_path)
         self.App.button_browse_pdf.configure(command=self.browse_pdf)
         self.App.checkbox_extract.configure(variable=self.checkbox_extract_var,command=lambda: self.on_checkbox_toggle(self.checkbox_extract_var))
-        self.App.checkbox_extract.onvalue = CHECK_EXTRACT
-        self.App.checkbox_extract.offvalue = 0
         self.App.entry_year_create.configure(textvariable=self.year_create)
         self.App.entry_month_create.configure(variable=self.month_create,values=MONTH_FR)
         self.App.checkbox_create.configure(variable=self.checkbox_create_var,command=lambda: self.on_checkbox_toggle(self.checkbox_create_var))
-        self.App.checkbox_create.onvalue = CHECK_CREATE
-        self.App.checkbox_create.offvalue = 0
         self.App.entry_year.configure(textvariable=self.year_var)
         self.App.entry_month.configure(variable=self.month_var)
         self.App.checkbox_update.configure(variable=self.checkbox_update_var,command=lambda: self.on_checkbox_toggle(self.checkbox_update_var))
-        self.App.checkbox_update.onvalue = CHECK_UPDATE
-        self.App.checkbox_update.offvalue = 0
         self.on_checkbox_toggle(self.checkbox_extract_var)
 
         self.App.button_ok.configure(command=self.ok)
@@ -79,7 +73,6 @@ class Main():
         self.App.settings_button.configure(command=self.open_settings)
         self.App.help_button.configure(command=self.open_help)
 
-        self.gif = Image.open(os.path.join(self.asset_path,'loading_gif.gif'))
         self.init_gif()
 
     def disable_update(self):
@@ -97,7 +90,7 @@ class Main():
         self.App.label_month.configure(state="normal",text_color=WHITE)
         self.App.entry_month.configure(state="normal",text_color=WHITE)
         self.App.checkbox_update.configure(state="normal")
-        self.checkbox_update_var.set(CHECK_UPDATE)
+        self.checkbox_update_var.set(self.App.CHECK_UPDATE)
     def disable_create(self):
        self.App.label_create_title.configure(text_color=GREY)
        self.App.label_year_create.configure(text_color=GREY)
@@ -113,7 +106,7 @@ class Main():
         self.App.label_month_create.configure(state="normal",text_color=WHITE)
         self.App.entry_month_create.configure(state="normal",text_color=WHITE)
         self.App.checkbox_create.configure(state="normal")
-        self.checkbox_create_var.set(CHECK_CREATE)
+        self.checkbox_create_var.set(self.App.CHECK_CREATE)
     
     def disable_extract(self):
         self.App.label_extract_title.configure(text_color=GREY)
@@ -126,23 +119,23 @@ class Main():
         self.App.entry_pdf.configure(state="normal",text_color=WHITE)
         self.App.button_browse_pdf.configure(state="normal")
         self.App.checkbox_extract.configure(state="normal")
-        self.checkbox_extract_var.set(CHECK_EXTRACT)
+        self.checkbox_extract_var.set(self.App.CHECK_EXTRACT)
     
     def glob_enable_extract(self):
         self.enable_extract()
         self.disable_create()
         self.disable_update()
-        self.update()
+        self.App.update()
     def glob_enable_create(self):
         self.enable_create()
         self.disable_update()
         self.disable_extract()
-        self.update()
+        self.App.update()
     def glob_enable_update(self):
         self.enable_update()
         self.disable_extract()
         self.disable_create()
-        self.update()
+        self.App.update()
 
     def disable_excel(self):
         self.App.label_excel_dir.configure(text_color=GREY)
@@ -154,20 +147,13 @@ class Main():
         self.App.button_browse_excel_dir.configure(state="normal")
         
     def init_gif(self):
-        self.frames = []
-        target_size = (45, 45)  # Définir la taille souhaitée pour le GIF
-        try:
-            while True:
-                # Convertir chaque frame en RGBA pour gérer la transparence
-                frame = self.App.gif.convert("RGBA")
-                # Redimensionner la frame
-                frame = frame.resize(target_size)
-                self.frames.append(ImageTk.PhotoImage(frame))
-                self.App.gif.seek(len(self.frames))  # Passer à la prochaine frame
-        except EOFError:
-            pass  # Fin du GIF
-        self.loading_index = 0  # Initialiser l'index de frame
-        self.is_paused = False
+       # Load the original image
+        self.loading_img = Image.open(os.path.join(self.asset_path,'loading.png'))
+        self.loading_ctkimg = ctk.CTkImage(light_image=self.loading_img, size=[45,45])
+         # Create a label to display it
+        self.loading_label = ctk.CTkLabel(self.App, image=self.loading_ctkimg, text="")
+        self.loading_angle = 0
+
     def cancel(self):
         self.App.destroy()
     
@@ -229,45 +215,58 @@ class Main():
                 self.update_combo_box()
                 
 
-
+    def background_task(self):
+        """Simulate background work and stop loading after 5s."""
+        self.running_thread = True
+        self.is_processing = True
+        time.sleep(5)
+        self.is_processing = False
+        self.running_thread = False
+        
     def ok(self):
         if (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == 0 and
-                                    self.checkbox_extract_var.get() == CHECK_EXTRACT): # Extraction (Create)
-            self.show_loading()
+                                    self.checkbox_extract_var.get() == self.App.CHECK_EXTRACT): # Extraction (Create)
             threading.Thread(target=self.launch_creation_extraction).start()
-        elif (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == CHECK_CREATE and
+            self.running_thread = True
+            self.start_loading()
+        elif (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == self.App.CHECK_CREATE and
                                     self.checkbox_extract_var.get() == 0): # Create
-            self.show_loading()
             threading.Thread(target=self.launch_creation).start()
-        elif (self.checkbox_update_var.get() == CHECK_UPDATE and self.checkbox_create_var.get() == 0 and
+            self.running_thread = True
+            self.start_loading()
+        elif (self.checkbox_update_var.get() == self.App.CHECK_UPDATE and self.checkbox_create_var.get() == 0 and
                                     self.checkbox_extract_var.get() == 0): # Update/Realisation
-            self.show_loading()
             threading.Thread(target=self.launch_realisation).start()
+            self.running_thread = True
+            self.start_loading()
             
     def launch_creation(self):
-        self.is_paused = False
+        self.running_thread = True
+        self.is_processing = True
         self.year = normalize_string(self.year_create.get())
         self.month = normalize_string(self.month_create.get())
         self.manage_excel_file("Extraction")
         if self.wb and self.ws:
             if not self.managment.ws_creat:
+                self.is_processing = False
                 messagebox.showinfo("Info", f"This sheet ({self.managment.ws_name}) already exist in {self.managment.file_path}")
             else:
                 mks = SheetMarker(self.ws)
                 set_all_data_validation(self.wb,mks)
                 is_save_ok = self.managment.save_wb()
-                self.is_paused = True
+                self.is_processing = False
                 messagebox.showinfo("Success", f"Sheet ({self.managment.ws_name}) created here: {self.managment.file_path}") if is_save_ok else None
         else:
-            self.is_paused = True
+            self.is_processing = False
             messagebox.showerror("Error", f"ERROR during Creation for {self.managment.ws_name}!")
-        self.after(0, self.hide_loading)
         self.wb.close()
+        self.running_thread = False
         
     def launch_creation_extraction(self):
+        self.running_thread = True
         file_paths_list = [path.strip() for path in self.pdf_path.get().split(';')]
         for path_pdf in file_paths_list:
-            self.is_paused = False
+            self.is_processing = True
             extraction = PDFExtraction(path_pdf)
             self.year = normalize_string(extraction.year)
             self.month = normalize_string(extraction.month)
@@ -275,37 +274,38 @@ class Main():
             f_update = True
             if self.wb and self.ws:
                 if not self.managment.ws_creat:
-                    self.is_paused = True
+                    self.is_processing = False
                     if not messagebox.askyesno("Confirmation", f"This sheet ({self.managment.ws_name}) already exist in {self.managment.file_path}, do you want to update it ?"):
                         f_update = False
                 if f_update:
-                    self.is_paused = False
+                    self.is_processing = True
                     StyleCell(self.wb)
                     mks = SheetMarker(self.ws)
                     WriteExtraction(self.ws,extraction,mks)
                     Valid(self.ws,mks)
                     set_all_data_validation(self.wb,mks)
                     is_save_ok = self.managment.save_wb()
-                    self.is_paused = True
+                    self.is_processing = False
                     messagebox.showinfo("Success", f"Extraction for {self.managment.ws_name} completed successfully!") if is_save_ok else None
             else:
-                self.is_paused = True
+                self.is_processing = False
                 messagebox.showerror("Error", f"ERROR during Extraction for {self.managment.ws_name}!")
-        self.after(0, self.hide_loading)
         self.wb.close()
         run_excel_path(self.file_path)
+        self.running_thread = False
         return self.ws
 
     def launch_realisation(self):
-        self.is_paused = False
+        self.running_thread = True
+        self.is_processing = True
         self.year = normalize_string(self.year_var.get())
         self.month = normalize_string(self.month_var.get().lower())
         self.manage_excel_file("Realisation")
         if self.wb:
             if self.ws:
-                self.is_paused = True
+                self.is_processing = False
                 if messagebox.askyesno("Confirmation", f"{self.managment.ws_name} sheet already exist here:\n{self.managment.file_path}\n\nDo you want to update it ?"):
-                    self.is_paused = False
+                    self.is_processing = True
                     StyleCell(self.wb)
                     mks = SheetMarker(self.ws)
                     realisation_month = MonthRealisation(self.ws,mks,"Monthly")
@@ -315,49 +315,61 @@ class Main():
                     Valid(self.ws,mks)
                     set_all_data_validation(self.wb,mks)
                     is_save_ok = self.managment.save_wb()
-                    self.is_paused = True
-                    self.after(0, self.hide_loading)
+                    self.is_processing = False
                     messagebox.showinfo("Success", f"Operation completed successfully for {self.managment.ws_name}!") if is_save_ok else None
                     self.wb.close()
                     run_excel_path(self.file_path)
             else:
-                self.after(0, self.hide_loading)
+                self.is_processing = False
                 messagebox.showinfo("Info", f"Create the sheet {self.month} before")
         else:
-            self.after(0, self.hide_loading)
+            self.is_processing = False
             messagebox.showinfo("Info", f"Build the workbook {self.year} before")
+        self.running_thread = False
         
     def manage_excel_file(self,man_type):
         self.managment = ManageExcelFile(self.excel_dir_path.get(),self.year,self.month,man_type)
         self.wb,self.ws,self.file_path = self.managment.get_wb_ws_fpath()
 
-    def show_loading(self):
-        self.App.loading_label.pack(padx=10,pady=10)
-        self.App.loading_label.configure(image= self.frames[self.loading_index])
-        self.update()
-        self.animate_gif()
+    def start_loading(self):
         self.disable_excel()
         self.disable_update()
         self.disable_extract()
-        
-    def hide_loading(self):
-        self.App.loading_label.pack_forget()
-        self.enable_excel()
-        if self.checkbox_update_var.get() == CHECK_UPDATE:
-            self.glob_enable_update()
-        elif self.checkbox_extract_var.get() == CHECK_EXTRACT:
-            self.glob_enable_extract()
+        self.disable_create()
+        self.animate_gif()
             
     def animate_gif(self):
-            if not self.is_paused:
-                frame = self.frames[self.loading_index]  # Obtenir la frame courante
-                self.App.loading_label.configure(image=frame)  # Mettre à jour l'image du label
-                self.update()
-                self.loading_index = (self.loading_index + 1) % len(self.frames)  # Passer à la frame suivante
-            # Reprogrammer pour afficher la prochaine frame
-            self.after(75, self.animate_gif)
+        """Animate image rotation while not paused."""
+        if self.is_processing:
+            # Si l'image n'est pas déjà packée, la packer
+            if not self.loading_label.winfo_ismapped():
+                self.loading_label.place(x=15, y=self.App.winfo_height()-15, anchor="sw")
+
+            # Rotation de l'image et mise à jour
+            rotated = self.loading_img.rotate(self.loading_angle, resample=Image.BICUBIC)
+            self.loading_ctkimg = ctk.CTkImage(light_image=rotated, size=(45, 45))
+            self.loading_label.configure(image=self.loading_ctkimg)
+
+            # Mise à jour de l'angle
+            self.loading_angle = (self.loading_angle + 10) % 360
+        else:
+            # Si l'image est packée et is_processing est False, on oublie le pack
+            if self.loading_label.winfo_ismapped():
+                self.loading_label.place_forget()
+
+        if self.running_thread:
+            # Re-planifier la mise à jour toutes les 100 ms
+            self.App.after(100, self.start_loading)
+        else:
+             # Autres actions à faire une fois que la tâche est terminée
+            self.enable_excel()
+            if self.checkbox_update_var.get() == self.App.CHECK_UPDATE:
+                self.glob_enable_update()
+            elif self.checkbox_extract_var.get() == self.App.CHECK_EXTRACT:
+                self.glob_enable_extract()
+
 
 
 if __name__ == "__main__":
     app = Main()
-    app.mainloop()
+    app.App.mainloop()
