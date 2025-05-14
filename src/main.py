@@ -18,6 +18,7 @@ from PIL import Image
 import sys
 from Init_App import App
 import time
+import os
 
 GREY = "#999999"
 WHITE = "white"
@@ -69,8 +70,7 @@ class Main():
 
         self.App.button_ok.configure(command=self.ok)
         self.App.button_cancel.configure(command=self.cancel)
-        self.App.close_button.configure(command=self.cancel)
-
+        self.App.protocol("WM_DELETE_WINDOW", self.cancel)
         self.App.settings_button.configure(command=self.open_settings)
         self.App.help_button.configure(command=self.open_help)
 
@@ -241,6 +241,11 @@ class Main():
         self.running_thread = True
         self.is_processing = True
         self.year = normalize_string(self.year_create.get())
+        if not self.year.isnumeric():
+            self.is_processing = False
+            messagebox.showinfo("Error", f"{self.year} is not numeric enter a valid year")
+            self.running_thread = False
+            return
         self.month = normalize_string(self.month_create.get())
         self.manage_excel_file("Extraction")
         if self.wb and self.ws:
@@ -257,12 +262,17 @@ class Main():
             self.is_processing = False
             messagebox.showerror("Error", f"ERROR during Creation for {self.managment.ws_name}!")
         self.wb.close()
+        run_excel_path(self.file_path)
         self.running_thread = False
         
     def launch_creation_extraction(self):
         self.running_thread = True
         file_paths_list = [path.strip() for path in self.pdf_path.get().split(';')]
         for path_pdf in file_paths_list:
+            if not os.path.isfile(path_pdf) or not path_pdf.lower().endswith(".pdf"):
+                self.is_processing = False
+                messagebox.showerror("Error", f"ERROR during Extraction for {path_pdf}!")
+                continue
             self.is_processing = True
             extraction = PDFExtraction(path_pdf)
             self.year = normalize_string(extraction.year)
@@ -287,8 +297,9 @@ class Main():
             else:
                 self.is_processing = False
                 messagebox.showerror("Error", f"ERROR during Extraction for {self.managment.ws_name}!")
-        self.wb.close()
-        run_excel_path(self.file_path)
+            self.wb.close()
+            if not messagebox.askyesno("Open Excel", f"Do you want to open the excel: {self.managment.ws_name} ?"):
+                run_excel_path(self.file_path)
         self.running_thread = False
         return self.ws
 
@@ -296,6 +307,11 @@ class Main():
         self.running_thread = True
         self.is_processing = True
         self.year = normalize_string(self.year_var.get())
+        if not self.year.isnumeric():
+            self.is_processing = False
+            messagebox.showinfo("Error", f"{self.year} is not numeric enter a valid year")
+            self.running_thread = False
+            return
         self.month = normalize_string(self.month_var.get().lower())
         self.manage_excel_file("Realisation")
         if self.wb:
