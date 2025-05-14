@@ -68,3 +68,7 @@ MONTH_SOLD_BALISE = f"{BALISE_SOLD_MONTH}solde fiche de paye (fin du mois)"
 MONTH_SOLD_EST = "Solde estimé :"
 MONTH_VERIF = "Verif"
 MONTH_PREV_SOLD = ['Solde précédent',2,1]
+
+NAME_FOLDER_CONFIG = 'config'
+NAME_FILE_PATH_EXCEL = 'path_excel_config.txt'
+EXCEL_PATH_BALISE = '>'

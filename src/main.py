@@ -1,9 +1,9 @@
 import customtkinter as ctk
-import tkinter as tk
 import os
-from tkinter import filedialog,messagebox,PhotoImage,Entry
+from tkinter import filedialog,messagebox
 from Tools import normalize_string,get_current_month,get_current_year,set_all_data_validation,run_excel_path
 from openpyxl import load_workbook
+from Excel_Path import check_excel_dir_path,update_excel_path_popup_ask,update_excel_path_popup_mandatory
 from Ext_PDF_extraction import PDFExtraction
 from Manage_excel_file import ManageExcelFile
 from Mark_Sheet import SheetMarker
@@ -14,7 +14,7 @@ from Styles import StyleCell
 from Const import TOOL_SHEET_NAME,MONTH_FR
 from Validation import Valid
 import threading
-from PIL import Image, ImageTk
+from PIL import Image
 import sys
 from Init_App import App
 import time
@@ -32,6 +32,11 @@ def ressource_path(rel_path):
 class Main():
     def __init__(self):
         self.App = App()
+
+        self.excel_dir_path = check_excel_dir_path()
+        if not isinstance(self.excel_dir_path,str):
+            update_excel_path_popup_mandatory()
+
         self.asset_path = ressource_path('asset')        
         self.wb, self.ws = None, None
         self.excel_file_path = None
@@ -42,7 +47,6 @@ class Main():
         
         # Variables pour stocker les chemins
         self.pdf_path = ctk.StringVar(value="")
-        self.excel_dir_path = ctk.StringVar(value=r"C:\Users\mcast\OneDrive\Documents\.Perso\[4] Finance\Compte\Fiche")
         self.year_var = ctk.StringVar(value=get_current_year())
         self.year_var.trace_add("write", self.update_combo_box)
         self.month_var = ctk.StringVar(value=get_current_month())
@@ -52,9 +56,6 @@ class Main():
         self.year_create = ctk.StringVar(value=get_current_year())
         self.month_create = ctk.StringVar(value=get_current_month())
 
-
-        self.App.entry_excel_dir.configure(textvariable=self.excel_dir_path)
-        self.App.button_browse_excel_dir.configure(command=self.browse_excel_dir)
         self.App.entry_pdf.configure(textvariable=self.pdf_path)
         self.App.button_browse_pdf.configure(command=self.browse_pdf)
         self.App.checkbox_extract.configure(variable=self.checkbox_extract_var,command=lambda: self.on_checkbox_toggle(self.checkbox_extract_var))
@@ -137,14 +138,6 @@ class Main():
         self.disable_create()
         self.App.update()
 
-    def disable_excel(self):
-        self.App.label_excel_dir.configure(text_color=GREY)
-        self.App.entry_excel_dir.configure(state="disabled",text_color=GREY)
-        self.App.button_browse_excel_dir.configure(state="disabled")
-    def enable_excel(self):
-        self.App.label_excel_dir.configure(text_color=WHITE)
-        self.App.entry_excel_dir.configure(state="normal",text_color=WHITE)
-        self.App.button_browse_excel_dir.configure(state="normal")
         
     def init_gif(self):
        # Load the original image
@@ -162,24 +155,23 @@ class Main():
     
     ########## COMMAND ##########
     def open_settings(self):
-        print("Settings selected")
+        update_excel_path_popup_ask()
+        self.App.dropdown_frame.place_forget()
+        self.App.dropdown_visible = False
 
     def open_help(self):
         print("Help selected")
+        self.App.dropdown_frame.place_forget()
+        self.App.dropdown_visible = False
 
     def browse_pdf(self):
         file_paths = filedialog.askopenfilenames(title="Sélectionner un fichier PDF", filetypes=[("PDF Files", "*.pdf")])
         if file_paths:
             self.pdf_path.set("; ".join(file_paths))
-    
-    def browse_excel_dir(self):
-        dir_path = filedialog.askdirectory(title="Sélectionner un dossier")
-        if dir_path:
-            self.excel_dir_path.set(dir_path)
             
     def get_wb_from_year_var(self):
         year = self.year_var.get()
-        excel_file_path = os.path.join(self.excel_dir_path.get(), f'{year}.xlsx')
+        excel_file_path = os.path.join(self.excel_dir_path, f'{year}.xlsx')
         return load_workbook(filename=excel_file_path)
         
     def get_existing_sheet_from_year(self):
@@ -224,6 +216,11 @@ class Main():
         self.running_thread = False
         
     def ok(self):
+        if not os.path.isdir(self.excel_dir_path):
+            self.excel_dir_path = check_excel_dir_path()
+            if not isinstance(self.excel_dir_path,str):
+                if not update_excel_path_popup_mandatory():
+                    return
         if (self.checkbox_update_var.get() == 0 and self.checkbox_create_var.get() == 0 and
                                     self.checkbox_extract_var.get() == self.App.CHECK_EXTRACT): # Extraction (Create)
             threading.Thread(target=self.launch_creation_extraction).start()
@@ -328,11 +325,10 @@ class Main():
         self.running_thread = False
         
     def manage_excel_file(self,man_type):
-        self.managment = ManageExcelFile(self.excel_dir_path.get(),self.year,self.month,man_type)
+        self.managment = ManageExcelFile(self.excel_dir_path,self.year,self.month,man_type)
         self.wb,self.ws,self.file_path = self.managment.get_wb_ws_fpath()
 
     def start_loading(self):
-        self.disable_excel()
         self.disable_update()
         self.disable_extract()
         self.disable_create()
@@ -362,7 +358,6 @@ class Main():
             self.App.after(100, self.start_loading)
         else:
              # Autres actions à faire une fois que la tâche est terminée
-            self.enable_excel()
             if self.checkbox_update_var.get() == self.App.CHECK_UPDATE:
                 self.glob_enable_update()
             elif self.checkbox_extract_var.get() == self.App.CHECK_EXTRACT:
